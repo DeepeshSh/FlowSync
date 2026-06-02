@@ -1,0 +1,1 @@
+// InventoryTransaction model

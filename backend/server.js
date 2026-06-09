@@ -4,12 +4,16 @@ const express = require("express");
 const connectDB = require("./config/db");
 
 const categoryRoutes =
-require(
-  "./routes/category.routes"
-);
+require("./routes/category.routes");
 
 const productRoutes =
 require("./routes/product.routes");
+
+const purchaseRoutes =
+require("./routes/purchaseRoutes");
+
+const supplierRoutes =
+require("./routes/supplierRoutes");
 
 const app = express();
 
@@ -21,16 +25,29 @@ app.get("/", (req, res) => {
   res.send("Inventory API Running");
 });
 
-
 app.use(
-    "/api/categories",
-    categoryRoutes
-  );
+  "/api/categories",
+  categoryRoutes
+);
 
-  
 app.use(
   "/api/products",
   productRoutes
+);
+
+app.use(
+  "/api/auth",
+  require("./routes/auth.routes")
+);
+
+app.use(
+  "/api/purchases",
+  purchaseRoutes
+);
+
+app.use(
+  "/api/suppliers",
+  supplierRoutes
 );
 
 const PORT =
@@ -41,10 +58,3 @@ app.listen(PORT, () => {
     `Server Running On Port ${PORT}`
   );
 });
-
-app.use(
-  "/api/auth",
-  require(
-    "./routes/auth.routes"
-  )
-);

@@ -13,6 +13,7 @@ exports.register = async (
 
     const {
       name,
+      businessName,
       email,
       password
     } = req.body;
@@ -38,6 +39,8 @@ exports.register = async (
       await User.create({
 
         name,
+
+        businessName,
 
         email,
 

@@ -144,15 +144,35 @@ class _EditProductScreenState
       print("SKU = ${skuController.text}");
 
       await ProductService().updateProduct(
-        id: widget.product.id,
-        name: nameController.text,
-        sku: skuController.text,
-        stock: int.parse(stockController.text),
-        purchasePrice:
-            double.parse(purchaseController.text),
-        sellingPrice:
-            double.parse(sellingController.text),
-      );
+  id: widget.product.id,
+
+  name: nameController.text,
+  sku: skuController.text,
+
+  brandName:
+      widget.product.brandName,
+
+  storageLocation:
+      widget.product.storageLocation,
+
+  unit:
+      widget.product.unit,
+
+  stock:
+      int.parse(stockController.text),
+
+  lowStockThreshold:
+      widget.product.lowStockThreshold,
+
+  purchasePrice:
+      double.parse(purchaseController.text),
+
+  sellingPrice:
+      double.parse(sellingController.text),
+
+  imageUrl:
+      widget.product.imageUrl,
+);
 
       if (context.mounted) {
       Navigator.pop(

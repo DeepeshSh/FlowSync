@@ -3,6 +3,29 @@ import 'package:dio/dio.dart';
 class AuthService {
   final Dio dio = Dio();
 
+
+Future<Map<String, dynamic>> register({
+  required String name,
+  required String businessName,
+  required String email,
+  required String password,
+}) async {
+
+  final response = await dio.post(
+    "http://10.0.2.2:5000/api/auth/register",
+
+    data: {
+      "name": name,
+      "businessName": businessName,
+      "email": email,
+      "password": password,
+    },
+  );
+
+  return response.data;
+}
+
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,

@@ -6,17 +6,53 @@ new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    trim: true,
   },
-
+  
   sku: {
     type: String,
     required: true,
+    trim: true,
+  },
+  
+  brandName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  
+  category: {
+    type:
+      mongoose.Schema.Types.ObjectId,
+
+    ref: "Category",
+
+    default: null,
   },
 
+ 
   stock: {
     type: Number,
     default: 0,
   },
+
+  unit: {
+    type: String,
+    default: "pcs",
+  }
+  ,
+
+  lowStockThreshold: {
+    type: Number,
+    default: 5,
+  },
+
+  storageLocation: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  
 
   purchasePrice: {
     type: Number,
@@ -28,15 +64,12 @@ new mongoose.Schema({
     default: 0,
   },
 
-  category: {
-    type:
-      mongoose.Schema.Types.ObjectId,
+  
 
-    ref: "Category",
-
-    default: null,
+  imageUrl: {
+    type: String,
+    default: "",
   },
-
 },
 {
   timestamps: true,

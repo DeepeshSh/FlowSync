@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'inventory_screen.dart';
 import 'package:dio/dio.dart';
+import 'register_screen.dart';
+import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -307,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               context,
 
                               MaterialPageRoute(
-                                builder: (_) => const InventoryScreen(),
+                               builder: (_) => const MainScreen(),
                               ),
                             );
                           }
@@ -372,12 +374,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("OTP Login Coming Soon"),
-                          ),
-                        );
-                      },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const RegisterScreen(),
+    ),
+  );
+},
 
                       label: const Text(
                         "Register",

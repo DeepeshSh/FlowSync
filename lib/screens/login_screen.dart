@@ -298,22 +298,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         try {
                           final result = await AuthService().login(
                             email: emailController.text.trim(),
-
                             password: passwordController.text,
                           );
 
-                          print(result);
+                          if (!mounted) return;
 
-                          if (context.mounted) {
-                            Navigator.pushReplacement(
-                              context,
-
-                              MaterialPageRoute(
-                               builder: (_) => const MainScreen(),
-                              ),
-                            );
-                          }
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MainScreen(),
+                            ),
+                          );
                         } on DioException catch (e) {
+                          if (!mounted) return;
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -322,6 +320,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           );
                         } catch (e) {
+                          if (!mounted) return;
+
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -374,13 +374,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     child: OutlinedButton.icon(
                       onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const RegisterScreen(),
-    ),
-  );
-},
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
 
                       label: const Text(
                         "Register",
@@ -530,5 +530,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 }

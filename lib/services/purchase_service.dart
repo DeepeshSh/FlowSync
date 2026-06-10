@@ -12,27 +12,30 @@ class PurchaseService {
   }
 
   Future<void> createPurchase({
-    required String purchaseNumber,
-    required String supplierName,
-    required double totalAmount,
-    required String paymentStatus,
-  }) async {
-    await dio.post(
-      "/purchases",
+  required String purchaseNumber,
+  required String supplierName,
+  required List<dynamic> items,
+  required double totalAmount,
+  required String paymentStatus,
+}) async {
 
-      data: {
-        "purchaseNumber": purchaseNumber,
+  await dio.post(
+    "/purchases",
 
-        "supplierName": supplierName,
+    data: {
+      "purchaseNumber": purchaseNumber,
 
-        "items": [],
+      "supplierName": supplierName,
 
-        "totalAmount": totalAmount,
+      "items": items,
 
-        "paymentStatus": paymentStatus,
-      },
-    );
-  }
+      "totalAmount": totalAmount,
+
+      "paymentStatus": paymentStatus,
+    },
+  );
+}
+    
 
   Future<void> deletePurchase(String id) async {
     await dio.delete("/purchases/$id");

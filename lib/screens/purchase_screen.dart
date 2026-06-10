@@ -9,24 +9,19 @@ class PurchaseScreen extends StatefulWidget {
   const PurchaseScreen({super.key});
 
   @override
-  State<PurchaseScreen> createState() =>
-      _PurchaseScreenState();
+  State<PurchaseScreen> createState() => _PurchaseScreenState();
 }
 
-class _PurchaseScreenState
-    extends State<PurchaseScreen> {
-
+class _PurchaseScreenState extends State<PurchaseScreen> {
   List<Purchase> purchases = [];
 
   List<Purchase> filteredPurchases = [];
 
   bool isLoading = true;
 
-  final searchController =
-      TextEditingController();
+  final searchController = TextEditingController();
 
-  String selectedSupplier =
-      "All Suppliers";
+  String selectedSupplier = "All Suppliers";
 
   DateTimeRange? selectedDateRange;
 
@@ -39,32 +34,22 @@ class _PurchaseScreenState
 
   Future<void> loadPurchases() async {
     try {
+      purchases = await PurchaseService().getPurchases();
 
-      purchases =
-          await PurchaseService()
-              .getPurchases();
-
-      filteredPurchases =
-          purchases;
+      filteredPurchases = purchases;
 
       setState(() {
         isLoading = false;
       });
-
     } catch (e) {
-
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  Future<void>
-      refreshPurchases() async {
-
-    purchases =
-        await PurchaseService()
-            .getPurchases();
+  Future<void> refreshPurchases() async {
+    purchases = await PurchaseService().getPurchases();
 
     filterPurchases();
 
@@ -72,87 +57,40 @@ class _PurchaseScreenState
   }
 
   void filterPurchases() {
-
-    List<Purchase> temp =
-        List.from(purchases);
+    List<Purchase> temp = List.from(purchases);
 
     // Search
 
-    if (searchController
-        .text
-        .isNotEmpty) {
-
-      temp = temp.where(
-        (purchase) {
-
-          return purchase
-                  .supplierName
-                  .toLowerCase()
-                  .contains(
-                    searchController
-                        .text
-                        .toLowerCase(),
-                  ) ||
-
-              purchase
-                  .purchaseNumber
-                  .toLowerCase()
-                  .contains(
-                    searchController
-                        .text
-                        .toLowerCase(),
-                  );
-        },
-      ).toList();
+    if (searchController.text.isNotEmpty) {
+      temp = temp.where((purchase) {
+        return purchase.supplierName.toLowerCase().contains(
+              searchController.text.toLowerCase(),
+            ) ||
+            purchase.purchaseNumber.toLowerCase().contains(
+              searchController.text.toLowerCase(),
+            );
+      }).toList();
     }
 
     // Supplier Filter
 
-    if (selectedSupplier !=
-        "All Suppliers") {
-
-      temp = temp.where(
-        (purchase) {
-
-          return purchase
-                  .supplierName ==
-              selectedSupplier;
-        },
-      ).toList();
+    if (selectedSupplier != "All Suppliers") {
+      temp = temp.where((purchase) {
+        return purchase.supplierName == selectedSupplier;
+      }).toList();
     }
 
     // Date Filter
 
-    if (selectedDateRange !=
-        null) {
-
-      temp = temp.where(
-        (purchase) {
-
-          return purchase
-                  .purchaseDate
-                  .isAfter(
-                    selectedDateRange!
-                        .start
-                        .subtract(
-                      const Duration(
-                        days: 1,
-                      ),
-                    ),
-                  ) &&
-              purchase
-                  .purchaseDate
-                  .isBefore(
-                    selectedDateRange!
-                        .end
-                        .add(
-                      const Duration(
-                        days: 1,
-                      ),
-                    ),
-                  );
-        },
-      ).toList();
+    if (selectedDateRange != null) {
+      temp = temp.where((purchase) {
+        return purchase.purchaseDate.isAfter(
+              selectedDateRange!.start.subtract(const Duration(days: 1)),
+            ) &&
+            purchase.purchaseDate.isBefore(
+              selectedDateRange!.end.add(const Duration(days: 1)),
+            );
+      }).toList();
     }
 
     setState(() {
@@ -161,225 +99,126 @@ class _PurchaseScreenState
   }
 
   List<String> get suppliers {
-
-    final list =
-        purchases
-            .map(
-              (purchase) =>
-                  purchase
-                      .supplierName,
-            )
-            .toSet()
-            .toList();
+    final list = purchases
+        .map((purchase) => purchase.supplierName)
+        .toSet()
+        .toList();
 
     list.sort();
 
-    return [
-      "All Suppliers",
-      ...list,
-    ];
+    return ["All Suppliers", ...list];
   }
 
-  int get totalPurchases =>
-      purchases.length;
+  int get totalPurchases => purchases.length;
 
   double get monthlyPurchaseValue {
-
-    return purchases.fold(
-      0,
-      (sum, purchase) =>
-          sum +
-          purchase.totalAmount,
-    );
+    return purchases.fold(0, (sum, purchase) => sum + purchase.totalAmount);
   }
 
   double get pendingPayments {
-
     return purchases
-        .where(
-          (purchase) =>
-              purchase
-                  .paymentStatus ==
-              "Pending",
-        )
-        .fold(
-          0,
-          (sum, purchase) =>
-              sum +
-              purchase.totalAmount,
-        );
+        .where((purchase) => purchase.paymentStatus == "Pending")
+        .fold(0, (sum, purchase) => sum + purchase.totalAmount);
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-
+  Widget build(BuildContext context) {
     if (isLoading) {
-
-      return const Scaffold(
-        body: Center(
-          child:
-              CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-
-      backgroundColor:
-          const Color(
-        0xFFF5F7FC,
-      ),
+      backgroundColor: const Color(0xFFF5F7FC),
 
       body: SafeArea(
         child: Column(
           children: [
-                        const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
 
             // HEADER
-
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
 
                 children: [
-
                   // MENU BUTTON
-
                   Container(
                     width: 52,
                     height: 52,
 
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          Colors.white,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
 
-                      borderRadius:
-                          BorderRadius.circular(
-                        18,
-                      ),
+                      borderRadius: BorderRadius.circular(18),
 
                       boxShadow: const [
-                        BoxShadow(
-                          color:
-                              Colors.black12,
-                          blurRadius: 10,
-                        ),
+                        BoxShadow(color: Colors.black12, blurRadius: 10),
                       ],
                     ),
 
                     child: const Icon(
                       Icons.menu,
                       size: 28,
-                      color:
-                          Color(
-                        0xFF1B2559,
-                      ),
+                      color: Color(0xFF1B2559),
                     ),
                   ),
 
-                  const SizedBox(
-                    width: 16,
-                  ),
+                  const SizedBox(width: 16),
 
                   // TITLE
-
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
                       children: const [
-
                         Text(
                           "Purchases",
 
-                          style:
-                              TextStyle(
-                            fontSize:
-                                34,
+                          style: TextStyle(
+                            fontSize: 34,
 
-                            fontWeight:
-                                FontWeight
-                                    .bold,
+                            fontWeight: FontWeight.bold,
 
-                            color:
-                                Color(
-                              0xFF1B2559,
-                            ),
+                            color: Color(0xFF1B2559),
                           ),
                         ),
 
-                        SizedBox(
-                          height: 4,
-                        ),
+                        SizedBox(height: 4),
 
                         Text(
                           "Manage all your purchase orders",
 
-                          style:
-                              TextStyle(
-                            fontSize:
-                                16,
-
-                            color:
-                                Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       ],
                     ),
                   ),
 
                   // NOTIFICATION
-
                   Stack(
                     children: [
-
                       Container(
                         width: 52,
                         height: 52,
 
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Colors.white,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
 
-                          borderRadius:
-                              BorderRadius.circular(
-                            18,
-                          ),
+                          borderRadius: BorderRadius.circular(18),
 
                           boxShadow: const [
-                            BoxShadow(
-                              color:
-                                  Colors.black12,
-                              blurRadius:
-                                  10,
-                            ),
+                            BoxShadow(color: Colors.black12, blurRadius: 10),
                           ],
                         ),
 
                         child: const Icon(
-                          Icons
-                              .notifications_none,
+                          Icons.notifications_none,
 
                           size: 28,
 
-                          color:
-                              Color(
-                            0xFF1B2559,
-                          ),
+                          color: Color(0xFF1B2559),
                         ),
                       ),
 
@@ -391,29 +230,22 @@ class _PurchaseScreenState
                           width: 22,
                           height: 22,
 
-                          decoration:
-                              const BoxDecoration(
-                            color:
-                                Colors.red,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
 
-                            shape:
-                                BoxShape.circle,
+                            shape: BoxShape.circle,
                           ),
 
                           child: const Center(
                             child: Text(
                               "3",
 
-                              style:
-                                  TextStyle(
-                                color:
-                                    Colors.white,
+                              style: TextStyle(
+                                color: Colors.white,
 
-                                fontSize:
-                                    11,
+                                fontSize: 11,
 
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -422,27 +254,17 @@ class _PurchaseScreenState
                     ],
                   ),
 
-                  const SizedBox(
-                    width: 12,
-                  ),
+                  const SizedBox(width: 12),
 
                   // PROFILE
-
                   Container(
                     width: 54,
                     height: 54,
 
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          const Color(
-                        0xFFEAF2FF,
-                      ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF2FF),
 
-                      borderRadius:
-                          BorderRadius.circular(
-                        18,
-                      ),
+                      borderRadius: BorderRadius.circular(18),
                     ),
 
                     child: const Icon(
@@ -450,227 +272,142 @@ class _PurchaseScreenState
 
                       size: 30,
 
-                      color:
-                          Color(
-                        0xFF2F80FF,
-                      ),
+                      color: Color(0xFF2F80FF),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 24,
-            ),
-                        // STATISTICS SECTION
+            const SizedBox(height: 24),
 
+            // STATISTICS SECTION
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Row(
                 children: [
-
                   Expanded(
                     child: _buildStatsCard(
-                      title:
-                          "Purchases",
+                      title: "Purchases",
 
-                      value:
-                          totalPurchases
-                              .toString(),
+                      value: totalPurchases.toString(),
 
-                      icon:
-                          Icons.shopping_cart,
+                      icon: Icons.shopping_cart,
 
-                      iconColor:
-                          const Color(
-                        0xFF2F80FF,
-                      ),
+                      iconColor: const Color(0xFF2F80FF),
 
-                      backgroundColor:
-                          const Color(
-                        0xFFEAF2FF,
-                      ),
+                      backgroundColor: const Color(0xFFEAF2FF),
                     ),
                   ),
 
-                  const SizedBox(
-                    width: 12,
-                  ),
+                  const SizedBox(width: 12),
 
                   Expanded(
                     child: _buildStatsCard(
-                      title:
-                          "This Month",
+                      title: "This Month",
 
-                      value:
-                          "₹${monthlyPurchaseValue.toStringAsFixed(0)}",
+                      value: "₹${monthlyPurchaseValue.toStringAsFixed(0)}",
 
-                      icon:
-                          Icons.currency_rupee,
+                      icon: Icons.currency_rupee,
 
-                      iconColor:
-                          Colors.green,
+                      iconColor: Colors.green,
 
-                      backgroundColor:
-                          const Color(
-                        0xFFE9F8EE,
-                      ),
+                      backgroundColor: const Color(0xFFE9F8EE),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
 
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Container(
-                padding:
-                    const EdgeInsets.all(
-                  18,
-                ),
+                padding: const EdgeInsets.all(18),
 
-                decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.white,
+                decoration: BoxDecoration(
+                  color: Colors.white,
 
-                  borderRadius:
-                      BorderRadius.circular(
-                    24,
-                  ),
+                  borderRadius: BorderRadius.circular(24),
 
                   boxShadow: const [
-                    BoxShadow(
-                      color:
-                          Colors.black12,
-                      blurRadius: 10,
-                    ),
+                    BoxShadow(color: Colors.black12, blurRadius: 10),
                   ],
                 ),
 
                 child: Row(
                   children: [
-
                     Container(
                       width: 58,
                       height: 58,
 
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            const Color(
-                          0xFFFFF4E8,
-                        ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4E8),
 
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
-                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
 
                       child: const Icon(
-                        Icons
-                            .account_balance_wallet,
+                        Icons.account_balance_wallet,
 
-                        color:
-                            Colors.orange,
+                        color: Colors.orange,
 
                         size: 28,
                       ),
                     ),
 
-                    const SizedBox(
-                      width: 16,
-                    ),
+                    const SizedBox(width: 16),
 
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
                         children: [
-
                           Text(
                             "₹${pendingPayments.toStringAsFixed(0)}",
 
-                            style:
-                                const TextStyle(
-                              fontSize:
-                                  22,
+                            style: const TextStyle(
+                              fontSize: 22,
 
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
 
-                              color:
-                                  Color(
-                                0xFF1B2559,
-                              ),
+                              color: Color(0xFF1B2559),
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 4,
-                          ),
+                          const SizedBox(height: 4),
 
                           const Text(
                             "Pending Payments",
 
-                            style:
-                                TextStyle(
-                              color:
-                                  Colors.grey,
-
-                              fontSize:
-                                  14,
-                            ),
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         ],
                       ),
                     ),
 
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
 
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            Colors.orange
-                                .shade50,
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
 
-                        borderRadius:
-                            BorderRadius.circular(
-                          20,
-                        ),
+                        borderRadius: BorderRadius.circular(20),
                       ),
 
                       child: const Text(
                         "Due",
 
-                        style:
-                            TextStyle(
-                          color:
-                              Colors.orange,
+                        style: TextStyle(
+                          color: Colors.orange,
 
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -679,151 +416,91 @@ class _PurchaseScreenState
               ),
             ),
 
-            const SizedBox(
-              height: 24,
-            ),
-                        // SEARCH + FILTER
+            const SizedBox(height: 24),
 
+            // SEARCH + FILTER
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Row(
                 children: [
-
                   Expanded(
                     child: Container(
                       height: 56,
 
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            Colors.white,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
 
-                        borderRadius:
-                            BorderRadius.circular(
-                          18,
-                        ),
+                        borderRadius: BorderRadius.circular(18),
 
                         boxShadow: const [
-                          BoxShadow(
-                            color:
-                                Colors.black12,
-                            blurRadius:
-                                8,
-                          ),
+                          BoxShadow(color: Colors.black12, blurRadius: 8),
                         ],
                       ),
 
                       child: TextField(
-                        controller:
-                            searchController,
+                        controller: searchController,
 
-                        onChanged:
-                            (value) {
+                        onChanged: (value) {
                           filterPurchases();
                         },
 
-                        decoration:
-                            const InputDecoration(
-                          hintText:
-                              "Search purchases...",
+                        decoration: const InputDecoration(
+                          hintText: "Search purchases...",
 
-                          prefixIcon:
-                              Icon(
-                            Icons.search,
-                          ),
+                          prefixIcon: Icon(Icons.search),
 
-                          border:
-                              InputBorder.none,
+                          border: InputBorder.none,
 
-                          contentPadding:
-                              EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(
-                    width: 12,
-                  ),
+                  const SizedBox(width: 12),
 
                   Container(
                     width: 56,
                     height: 56,
 
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          const Color(
-                        0xFF2F80FF,
-                      ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2F80FF),
 
-                      borderRadius:
-                          BorderRadius.circular(
-                        18,
-                      ),
+                      borderRadius: BorderRadius.circular(18),
                     ),
 
                     child: IconButton(
                       onPressed: () {},
 
-                      icon: const Icon(
-                        Icons.tune,
-
-                        color:
-                            Colors.white,
-                      ),
+                      icon: const Icon(Icons.tune, color: Colors.white),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 18,
-            ),
+            const SizedBox(height: 18),
 
             // DATE + SUPPLIER FILTERS
-
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Row(
                 children: [
-
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
+                        final result = await showDateRangePicker(
+                          context: context,
 
-                        final result =
-                            await showDateRangePicker(
-                          context:
-                              context,
+                          firstDate: DateTime(2020),
 
-                          firstDate:
-                              DateTime(
-                            2020,
-                          ),
-
-                          lastDate:
-                              DateTime(
-                            2100,
-                          ),
+                          lastDate: DateTime(2100),
                         );
 
-                        if (result !=
-                            null) {
-
-                          selectedDateRange =
-                              result;
+                        if (result != null) {
+                          selectedDateRange = result;
 
                           filterPurchases();
                         }
@@ -832,69 +509,37 @@ class _PurchaseScreenState
                       child: Container(
                         height: 52,
 
-                        padding:
-                            const EdgeInsets.symmetric(
-                          horizontal:
-                              14,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
 
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Colors.white,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
 
-                          borderRadius:
-                              BorderRadius.circular(
-                            16,
-                          ),
+                          borderRadius: BorderRadius.circular(16),
 
-                          boxShadow:
-                              const [
-                            BoxShadow(
-                              color:
-                                  Colors.black12,
-
-                              blurRadius:
-                                  8,
-                            ),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 8),
                           ],
                         ),
 
                         child: Row(
                           children: [
-
                             const Icon(
-                              Icons
-                                  .calendar_month,
+                              Icons.calendar_month,
 
-                              color:
-                                  Color(
-                                0xFF2F80FF,
-                              ),
+                              color: Color(0xFF2F80FF),
                             ),
 
-                            const SizedBox(
-                              width:
-                                  8,
-                            ),
+                            const SizedBox(width: 8),
 
                             Expanded(
-                              child:
-                                  Text(
-                                selectedDateRange ==
-                                        null
+                              child: Text(
+                                selectedDateRange == null
                                     ? "Date Range"
                                     : "${selectedDateRange!.start.day}/${selectedDateRange!.start.month} - ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}",
 
-                                overflow:
-                                    TextOverflow
-                                        .ellipsis,
+                                overflow: TextOverflow.ellipsis,
 
-                                style:
-                                    const TextStyle(
-                                  fontSize:
-                                      13,
-                                ),
+                                style: const TextStyle(fontSize: 13),
                               ),
                             ),
                           ],
@@ -903,83 +548,44 @@ class _PurchaseScreenState
                     ),
                   ),
 
-                  const SizedBox(
-                    width: 12,
-                  ),
+                  const SizedBox(width: 12),
 
                   Expanded(
                     child: Container(
                       height: 52,
 
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal:
-                            12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
 
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            Colors.white,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
 
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
-                        ),
+                        borderRadius: BorderRadius.circular(16),
 
-                        boxShadow:
-                            const [
-                          BoxShadow(
-                            color:
-                                Colors.black12,
-
-                            blurRadius:
-                                8,
-                          ),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 8),
                         ],
                       ),
 
-                      child:
-                          DropdownButtonHideUnderline(
-                        child:
-                            DropdownButton<String>(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedSupplier,
 
-                          value:
-                              selectedSupplier,
+                          isExpanded: true,
 
-                          isExpanded:
-                              true,
+                          items: suppliers.map((supplier) {
+                            return DropdownMenuItem(
+                              value: supplier,
 
-                          items:
-                              suppliers.map(
-                            (
-                              supplier,
-                            ) {
+                              child: Text(supplier),
+                            );
+                          }).toList(),
 
-                              return DropdownMenuItem(
-                                value:
-                                    supplier,
-
-                                child:
-                                    Text(
-                                  supplier,
-                                ),
-                              );
-                            },
-                          ).toList(),
-
-                          onChanged:
-                              (
-                            value,
-                          ) {
-
-                            if (value ==
-                                null) {
+                          onChanged: (value) {
+                            if (value == null) {
                               return;
                             }
 
-                            selectedSupplier =
-                                value;
+                            selectedSupplier = value;
 
                             filterPurchases();
                           },
@@ -991,582 +597,369 @@ class _PurchaseScreenState
               ),
             ),
 
-            const SizedBox(
-              height: 24,
-            ),
+            const SizedBox(height: 24),
 
             // PURCHASE LIST HEADER
-
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
 
               child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                 children: const [
-
                   Text(
                     "Recent Purchases",
 
-                    style:
-                        TextStyle(
-                      fontSize:
-                          20,
+                    style: TextStyle(
+                      fontSize: 20,
 
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
 
-                      color:
-                          Color(
-                        0xFF1B2559,
-                      ),
+                      color: Color(0xFF1B2559),
                     ),
                   ),
 
                   Text(
                     "View All",
 
-                    style:
-                        TextStyle(
-                      color:
-                          Color(
-                        0xFF2F80FF,
-                      ),
+                    style: TextStyle(
+                      color: Color(0xFF2F80FF),
 
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
 
             Expanded(
-              child:
-                  filteredPurchases
-                          .isEmpty
+              child: filteredPurchases.isEmpty
+                  ? const Center(child: Text("No Purchases Found"))
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 120,
+                      ),
 
-                      ? const Center(
-                          child: Text(
-                            "No Purchases Found",
+                      itemCount: filteredPurchases.length,
+
+                      itemBuilder: (context, index) {
+                        final purchase = filteredPurchases[index];
+                        final bool isPaid = purchase.paymentStatus == "Paid";
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+
+                          padding: const EdgeInsets.all(18),
+
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+
+                            borderRadius: BorderRadius.circular(24),
+
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+
+                                blurRadius: 12,
+
+                                offset: Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        )
 
-                      : ListView.builder(
-                          padding:
-                              const EdgeInsets.only(
-                            left: 20,
-                            right: 20,
-                            bottom: 120,
-                          ),
+                          child: Column(
+                            children: [
+                              // TOP ROW
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
 
-                          itemCount:
-                              filteredPurchases
-                                  .length,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEAF2FF),
 
-                          itemBuilder:
-                              (
-                            context,
-                            index,
-                          ) {
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
 
-                            final purchase =
-                                filteredPurchases[
-                                    index];
-                                                                final bool isPaid =
-                                purchase.paymentStatus ==
-                                "Paid";
+                                    child: Center(
+                                      child: Text(
+                                        purchase.supplierName.isNotEmpty
+                                            ? purchase.supplierName[0]
+                                                  .toUpperCase()
+                                            : "S",
 
-                            return Container(
-                              margin:
-                                  const EdgeInsets.only(
-                                bottom: 16,
+                                        style: const TextStyle(
+                                          fontSize: 24,
+
+                                          fontWeight: FontWeight.bold,
+
+                                          color: Color(0xFF2F80FF),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 14),
+
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+
+                                      children: [
+                                        Text(
+                                          purchase.supplierName,
+
+                                          style: const TextStyle(
+                                            fontSize: 17,
+
+                                            fontWeight: FontWeight.bold,
+
+                                            color: Color(0xFF1B2559),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 4),
+
+                                        Text(
+                                          purchase.purchaseNumber,
+
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+
+                                      vertical: 6,
+                                    ),
+
+                                    decoration: BoxDecoration(
+                                      color: isPaid
+                                          ? Colors.green.shade50
+                                          : Colors.orange.shade50,
+
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+
+                                    child: Text(
+                                      purchase.paymentStatus,
+
+                                      style: TextStyle(
+                                        color: isPaid
+                                            ? Colors.green
+                                            : Colors.orange,
+
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 8),
+
+                                  const Icon(
+                                    Icons.more_vert,
+
+                                    color: Colors.grey,
+                                  ),
+                                ],
                               ),
 
-                              padding:
-                                  const EdgeInsets.all(
-                                18,
-                              ),
+                              const SizedBox(height: 16),
 
-                              decoration:
-                                  BoxDecoration(
-                                color:
-                                    Colors.white,
+                              const Divider(),
 
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  24,
-                                ),
+                              const SizedBox(height: 12),
 
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color:
-                                        Colors.black12,
+                              // DETAILS
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
 
-                                    blurRadius:
-                                        12,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEAF2FF),
 
-                                    offset:
-                                        Offset(
-                                      0,
-                                      4,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+
+                                          child: const Icon(
+                                            Icons.inventory_2_outlined,
+
+                                            size: 18,
+
+                                            color: Color(0xFF2F80FF),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 10),
+
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+
+                                          children: [
+                                            Text(
+                                              "${purchase.items.length}",
+
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+
+                                            const Text(
+                                              "Items",
+
+                                              style: TextStyle(
+                                                color: Colors.grey,
+
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE9F8EE),
+
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+
+                                          child: const Icon(
+                                            Icons.currency_rupee,
+
+                                            size: 18,
+
+                                            color: Colors.green,
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 10),
+
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+
+                                          children: [
+                                            Text(
+                                              "₹${purchase.totalAmount.toStringAsFixed(0)}",
+
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+
+                                            const Text(
+                                              "Amount",
+
+                                              style: TextStyle(
+                                                color: Colors.grey,
+
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
 
-                              child: Column(
+                              const SizedBox(height: 16),
+
+                              Row(
                                 children: [
+                                  const Icon(
+                                    Icons.calendar_month,
 
-                                  // TOP ROW
+                                    size: 18,
 
-                                  Row(
-                                    children: [
-
-                                      Container(
-                                        width: 56,
-                                        height: 56,
-
-                                        decoration:
-                                            BoxDecoration(
-                                          color:
-                                              const Color(
-                                            0xFFEAF2FF,
-                                          ),
-
-                                          borderRadius:
-                                              BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-
-                                        child:
-                                            Center(
-                                          child:
-                                              Text(
-                                            purchase
-                                                    .supplierName
-                                                    .isNotEmpty
-                                                ? purchase
-                                                    .supplierName[0]
-                                                    .toUpperCase()
-                                                : "S",
-
-                                            style:
-                                                const TextStyle(
-                                              fontSize:
-                                                  24,
-
-                                              fontWeight:
-                                                  FontWeight.bold,
-
-                                              color:
-                                                  Color(
-                                                0xFF2F80FF,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        width:
-                                            14,
-                                      ),
-
-                                      Expanded(
-                                        child:
-                                            Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment
-                                                  .start,
-
-                                          children: [
-
-                                            Text(
-                                              purchase
-                                                  .supplierName,
-
-                                              style:
-                                                  const TextStyle(
-                                                fontSize:
-                                                    17,
-
-                                                fontWeight:
-                                                    FontWeight.bold,
-
-                                                color:
-                                                    Color(
-                                                  0xFF1B2559,
-                                                ),
-                                              ),
-                                            ),
-
-                                            const SizedBox(
-                                              height:
-                                                  4,
-                                            ),
-
-                                            Text(
-                                              purchase
-                                                  .purchaseNumber,
-
-                                              style:
-                                                  const TextStyle(
-                                                color:
-                                                    Colors.grey,
-
-                                                fontSize:
-                                                    13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      Container(
-                                        padding:
-                                            const EdgeInsets.symmetric(
-                                          horizontal:
-                                              12,
-
-                                          vertical:
-                                              6,
-                                        ),
-
-                                        decoration:
-                                            BoxDecoration(
-                                          color: isPaid
-                                              ? Colors
-                                                  .green
-                                                  .shade50
-                                              : Colors
-                                                  .orange
-                                                  .shade50,
-
-                                          borderRadius:
-                                              BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-
-                                        child:
-                                            Text(
-                                          purchase
-                                              .paymentStatus,
-
-                                          style:
-                                              TextStyle(
-                                            color: isPaid
-                                                ? Colors
-                                                    .green
-                                                : Colors
-                                                    .orange,
-
-                                            fontWeight:
-                                                FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        width:
-                                            8,
-                                      ),
-
-                                      const Icon(
-                                        Icons
-                                            .more_vert,
-
-                                        color:
-                                            Colors.grey,
-                                      ),
-                                    ],
+                                    color: Colors.grey,
                                   ),
 
-                                  const SizedBox(
-                                    height:
-                                        16,
+                                  const SizedBox(width: 6),
+
+                                  Text(
+                                    "${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
+
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
 
-                                  const Divider(),
+                                  const Spacer(),
 
-                                  const SizedBox(
-                                    height:
-                                        12,
-                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios,
 
-                                  // DETAILS
+                                    size: 16,
 
-                                  Row(
-                                    children: [
-
-                                      Expanded(
-                                        child:
-                                            Row(
-                                          children: [
-
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.all(
-                                                8,
-                                              ),
-
-                                              decoration:
-                                                  BoxDecoration(
-                                                color:
-                                                    const Color(
-                                                  0xFFEAF2FF,
-                                                ),
-
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                  10,
-                                                ),
-                                              ),
-
-                                              child:
-                                                  const Icon(
-                                                Icons
-                                                    .inventory_2_outlined,
-
-                                                size:
-                                                    18,
-
-                                                color:
-                                                    Color(
-                                                  0xFF2F80FF,
-                                                ),
-                                              ),
-                                            ),
-
-                                            const SizedBox(
-                                              width:
-                                                  10,
-                                            ),
-
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment
-                                                      .start,
-
-                                              children: [
-
-                                                Text(
-                                                  "${purchase.itemCount}",
-
-                                                  style:
-                                                      const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold,
-                                                  ),
-                                                ),
-
-                                                const Text(
-                                                  "Items",
-
-                                                  style:
-                                                      TextStyle(
-                                                    color:
-                                                        Colors.grey,
-
-                                                    fontSize:
-                                                        12,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      Expanded(
-                                        child:
-                                            Row(
-                                          children: [
-
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.all(
-                                                8,
-                                              ),
-
-                                              decoration:
-                                                  BoxDecoration(
-                                                color:
-                                                    const Color(
-                                                  0xFFE9F8EE,
-                                                ),
-
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                  10,
-                                                ),
-                                              ),
-
-                                              child:
-                                                  const Icon(
-                                                Icons
-                                                    .currency_rupee,
-
-                                                size:
-                                                    18,
-
-                                                color:
-                                                    Colors.green,
-                                              ),
-                                            ),
-
-                                            const SizedBox(
-                                              width:
-                                                  10,
-                                            ),
-
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment
-                                                      .start,
-
-                                              children: [
-
-                                                Text(
-                                                  "₹${purchase.totalAmount.toStringAsFixed(0)}",
-
-                                                  style:
-                                                      const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold,
-                                                  ),
-                                                ),
-
-                                                const Text(
-                                                  "Amount",
-
-                                                  style:
-                                                      TextStyle(
-                                                    color:
-                                                        Colors.grey,
-
-                                                    fontSize:
-                                                        12,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(
-                                    height:
-                                        16,
-                                  ),
-
-                                  Row(
-                                    children: [
-
-                                      const Icon(
-                                        Icons
-                                            .calendar_month,
-
-                                        size:
-                                            18,
-
-                                        color:
-                                            Colors.grey,
-                                      ),
-
-                                      const SizedBox(
-                                        width:
-                                            6,
-                                      ),
-
-                                      Text(
-                                        "${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
-
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.grey,
-                                        ),
-                                      ),
-
-                                      const Spacer(),
-
-                                      const Icon(
-                                        Icons
-                                            .arrow_forward_ios,
-
-                                        size:
-                                            16,
-
-                                        color:
-                                            Color(
-                                          0xFF2F80FF,
-                                        ),
-                                      ),
-                                    ],
+                                    color: Color(0xFF2F80FF),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
 
-      floatingActionButton:
-          FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-
           await Navigator.push(
             context,
 
-            MaterialPageRoute(
-              builder: (_) =>
-                  const AddPurchaseScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const AddPurchaseScreen()),
           );
 
-          refreshPurchases();
+          await refreshPurchases();
         },
 
-        backgroundColor:
-            const Color(
-          0xFF2F80FF,
-        ),
+        backgroundColor: const Color(0xFF2F80FF),
 
-        icon: const Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
+        icon: const Icon(Icons.add, color: Colors.white),
 
         label: const Text(
           "New Purchase",
 
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
-    Widget _buildStatsCard({
+
+  Widget _buildStatsCard({
     required String title,
     required String value,
     required IconData icon,
@@ -1574,19 +967,12 @@ class _PurchaseScreenState
     required Color backgroundColor,
   }) {
     return Container(
-      padding:
-          const EdgeInsets.all(
-        18,
-      ),
+      padding: const EdgeInsets.all(18),
 
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
 
-        borderRadius:
-            BorderRadius.circular(
-          24,
-        ),
+        borderRadius: BorderRadius.circular(24),
 
         boxShadow: const [
           BoxShadow(
@@ -1598,76 +984,43 @@ class _PurchaseScreenState
       ),
 
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-
           Container(
             width: 48,
             height: 48,
 
-            decoration:
-                BoxDecoration(
-              color:
-                  backgroundColor,
+            decoration: BoxDecoration(
+              color: backgroundColor,
 
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
+              borderRadius: BorderRadius.circular(14),
             ),
 
-            child: Icon(
-              icon,
-              color:
-                  iconColor,
-              size: 24,
-            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
 
-          const SizedBox(
-            height: 18,
-          ),
+          const SizedBox(height: 18),
 
           Text(
             value,
 
             maxLines: 1,
 
-            overflow:
-                TextOverflow
-                    .ellipsis,
+            overflow: TextOverflow.ellipsis,
 
-            style:
-                const TextStyle(
+            style: const TextStyle(
               fontSize: 20,
 
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
 
-              color:
-                  Color(
-                0xFF1B2559,
-              ),
+              color: Color(0xFF1B2559),
             ),
           ),
 
-          const SizedBox(
-            height: 6,
-          ),
+          const SizedBox(height: 6),
 
-          Text(
-            title,
-
-            style:
-                const TextStyle(
-              color:
-                  Colors.grey,
-
-              fontSize: 13,
-            ),
-          ),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
         ],
       ),
     );
@@ -1675,11 +1028,8 @@ class _PurchaseScreenState
 
   @override
   void dispose() {
-
-    searchController
-        .dispose();
+    searchController.dispose();
 
     super.dispose();
   }
-
 }

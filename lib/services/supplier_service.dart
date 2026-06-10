@@ -6,7 +6,7 @@ class SupplierService {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl:
-          "http://YOUR_IP:5000/api",
+          "http://10.0.2.2:5000/api",
     ),
   );
 

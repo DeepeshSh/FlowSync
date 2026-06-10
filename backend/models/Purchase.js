@@ -8,10 +8,45 @@ const purchaseSchema = new mongoose.Schema(
       unique: true,
     },
 
+    // Supplier Details
+
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Supplier",
+    },
+
     supplierName: {
       type: String,
       required: true,
     },
+
+    contactPerson: {
+      type: String,
+      default: "",
+    },
+
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    paymentTerms: {
+      type: String,
+      default: "30 Days",
+    },
+
+    // Dates
+
+    purchaseDate: {
+      type: Date,
+      default: Date.now,
+    },
+
+    deliveryDate: {
+      type: Date,
+    },
+
+    // Products
 
     items: [
       {
@@ -20,33 +55,104 @@ const purchaseSchema = new mongoose.Schema(
           ref: "Product",
         },
 
-        productName: String,
+        productName: {
+          type: String,
+          required: true,
+        },
 
-        quantity: Number,
+        sku: {
+          type: String,
+          default: "",
+        },
 
-        purchasePrice: Number,
+        quantity: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
 
-        total: Number,
+        rate: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+
+        amount: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
       },
     ],
+
+    // Notes
+
+    notes: {
+      type: String,
+      default: "",
+    },
+
+    // Summary
+
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
+
+    discount: {
+      type: Number,
+      default: 0,
+    },
+
+    gst: {
+      type: Number,
+      default: 0,
+    },
+
+    transportCharges: {
+      type: Number,
+      default: 0,
+    },
+
+    advancePayment: {
+      type: Number,
+      default: 0,
+    },
+
+    balanceDue: {
+      type: Number,
+      default: 0,
+    },
 
     totalAmount: {
       type: Number,
       required: true,
+      default: 0,
     },
+
+    // Status
 
     paymentStatus: {
       type: String,
+
       enum: [
-        "Paid",
         "Pending",
+        "Partial",
+        "Paid",
       ],
+
       default: "Pending",
     },
 
-    purchaseDate: {
-      type: Date,
-      default: Date.now,
+    status: {
+      type: String,
+
+      enum: [
+        "Draft",
+        "Confirmed",
+      ],
+
+      default: "Draft",
     },
   },
 

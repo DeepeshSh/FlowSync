@@ -17,7 +17,7 @@ class _SplashScreenState
     super.initState();
 
     Future.delayed(
-      const Duration(seconds: 3),
+      const Duration(seconds: 1),
       () {
         if (!mounted) return;
 
@@ -94,7 +94,7 @@ class _SplashScreenState
 
                       // Logo
                       Image.asset(
-                        "lib/assets/images/flowsync_logo.png",
+                        "lib/assets/images/logo.png",
                         height: 120,
                       ),
 

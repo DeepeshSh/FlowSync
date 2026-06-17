@@ -144,26 +144,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
                 children: [
                   // MENU BUTTON
-                  Container(
-                    width: 52,
-                    height: 52,
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-
-                      borderRadius: BorderRadius.circular(18),
-
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 10),
-                      ],
-                    ),
-
-                    child: const Icon(
-                      Icons.menu,
-                      size: 28,
-                      color: Color(0xFF1B2559),
-                    ),
-                  ),
+                  
 
                   const SizedBox(width: 16),
 
@@ -177,7 +158,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                           "Purchases",
 
                           style: TextStyle(
-                            fontSize: 34,
+                            fontSize: 28,
 
                             fontWeight: FontWeight.bold,
 
@@ -190,7 +171,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         Text(
                           "Manage all your purchase orders",
 
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -200,13 +181,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   Stack(
                     children: [
                       Container(
-                        width: 52,
-                        height: 52,
+                        width: 50,
+                        height: 50,
 
                         decoration: BoxDecoration(
                           color: Colors.white,
 
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(16),
 
                           boxShadow: const [
                             BoxShadow(color: Colors.black12, blurRadius: 10),
@@ -216,7 +197,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         child: const Icon(
                           Icons.notifications_none,
 
-                          size: 28,
+                          size: 24,
 
                           color: Color(0xFF1B2559),
                         ),
@@ -258,19 +239,19 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
                   // PROFILE
                   Container(
-                    width: 54,
-                    height: 54,
+                    width: 50,
+                    height: 50,
 
                     decoration: BoxDecoration(
                       color: const Color(0xFFEAF2FF),
 
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(16),
                     ),
 
                     child: const Icon(
                       Icons.person,
 
-                      size: 30,
+                      size: 24,
 
                       color: Color(0xFF2F80FF),
                     ),
@@ -279,7 +260,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
 
             // STATISTICS SECTION
             Padding(

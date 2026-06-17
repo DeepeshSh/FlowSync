@@ -24,18 +24,37 @@ class CategoryService {
   }
 
   Future<void> createCategory({
-    required String name,
-    required String description,
-  }) async {
+  required String name,
+  String? parentCategoryId,
+  required String unit,
+  required bool isFragile,
+  required bool isReturnable,
+  required String notes,
+}) async {
 
-    await dio.post(
-      "$baseUrl/api/categories",
+  await dio.post(
+    "$baseUrl/api/categories",
 
-      data: {
-        "name": name,
-        "description":
-            description,
-      },
-    );
-  }
+    data: {
+      "name": name,
+      "parentCategoryId":
+          parentCategoryId,
+      "unit": unit,
+      "isFragile": isFragile,
+      "isReturnable":
+          isReturnable,
+      "notes": notes,
+    },
+  );
+}
+
+Future<void> deleteCategory(
+  String id,
+) async {
+
+  await dio.delete(
+    "$baseUrl/api/categories/$id",
+  );
+}
+
 }

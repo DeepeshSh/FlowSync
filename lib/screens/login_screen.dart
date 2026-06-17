@@ -19,6 +19,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final passwordController = TextEditingController();
 
+bool hasUpperCase = false;
+
+bool hasDigit = false;
+
+bool hasSpecialChar = false;
+
+bool hasMinLength = false;
+
+void validatePassword(String password) {
+
+  setState(() {
+
+    hasUpperCase =
+        RegExp(r'[A-Z]').hasMatch(password);
+
+    hasDigit =
+        RegExp(r'[0-9]').hasMatch(password);
+
+    hasSpecialChar =
+        RegExp(r'[!@#\$%^&*(),.?":{}|<>]')
+            .hasMatch(password);
+
+    hasMinLength =
+        password.length >= 8;
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -243,11 +270,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 10),
 
                   TextField(
-                    controller: passwordController,
+  controller: passwordController,
 
-                    obscureText: obscurePassword,
+  obscureText: obscurePassword,
 
-                    decoration: InputDecoration(
+  onChanged: (value) {
+    validatePassword(value);
+  },
+
+  decoration: InputDecoration(
                       hintText: "Enter your password",
 
                       prefixIcon: const Icon(
@@ -274,6 +305,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+
+                  
 
                   const SizedBox(height: 5),
 
@@ -405,8 +438,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          Positioned(
-            bottom: 25,
+          if (MediaQuery.of(context)
+        .viewInsets
+        .bottom ==
+    0)
+  Positioned(
+    bottom: 25,
             left: 0,
             right: 0,
 

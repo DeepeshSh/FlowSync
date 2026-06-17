@@ -4,6 +4,7 @@ import '../models/category_model.dart';
 import '../services/category_service.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'add_categories_screen.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -34,6 +35,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final supplierNameController = TextEditingController();
 
   final amountPaidController = TextEditingController();
+
+  final lengthController =
+    TextEditingController();
+
+final breadthController =
+    TextEditingController();
+
+final heightController =
+    TextEditingController();
+
+String selectedDimensionUnit =
+    "cm";
+
+    String selectedFragility = "No";
+  
+  final CategoryService categoryService =
+    CategoryService();
 
   File? selectedImage;
 
@@ -67,11 +85,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  Future<void> showAddCategoryDialog() async {
-    final nameController = TextEditingController();
+  
 
-    final descriptionController = TextEditingController();
-  }
 
   Future<void> saveProduct() async {
     if (selectedCategoryId == null) {
@@ -102,6 +117,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       unit: unitController.text,
 
       lowStockThreshold: int.parse(thresholdController.text),
+
+      
 
       imageUrl: "",
     );
@@ -174,31 +191,68 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
           const SizedBox(height: 16),
 
-          DropdownButtonFormField<String>(
-            value: selectedCategoryId,
+Row(
+  children: [
+    Expanded(
+      child: DropdownButtonFormField<String>(
+        value: selectedCategoryId,
 
-            decoration: InputDecoration(
-              labelText: "Category",
-
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-
-            items: categories.map((category) {
-              return DropdownMenuItem(
-                value: category.id,
-
-                child: Text(category.name),
-              );
-            }).toList(),
-
-            onChanged: (value) {
-              setState(() {
-                selectedCategoryId = value;
-              });
-            },
+        decoration: InputDecoration(
+          labelText: "Category",
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(14),
           ),
+        ),
+
+        items: categories.map((category) {
+          return DropdownMenuItem(
+            value: category.id,
+            child: Text(category.name),
+          );
+        }).toList(),
+
+        onChanged: (value) {
+          setState(() {
+            selectedCategoryId = value;
+          });
+        },
+      ),
+    ),
+
+    const SizedBox(width: 10),
+
+    Container(
+      height: 56,
+      width: 56,
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        borderRadius:
+            BorderRadius.circular(14),
+      ),
+      child: IconButton(
+        icon: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        onPressed: () async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) =>
+          const AddCategoriesScreen(),
+    ),
+  );
+
+  await loadCategories();
+},
+      ),
+    ),
+  ],
+),
+      
+
+    
 
           const SizedBox(height: 8),
 
@@ -249,8 +303,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         ],
       ),
+
+      
     );
-  }
+  } 
+  
+
 
   Widget buildStockInfoCard() {
     return sectionCard(
@@ -290,37 +348,159 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
 
-          TextField(
-            controller: unitController,
-
-            decoration: InputDecoration(
-              labelText: "Dimensions",
-
-              hintText: "Length Bredth Height",
-
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
 
           const SizedBox(height: 16),
 
-          TextField(
-            controller: unitController,
+const Text(
+  "Dimensions",
+  style: TextStyle(
+    fontWeight: FontWeight.w600,
+  ),
+),
 
-            decoration: InputDecoration(
-              labelText: "Fragility",
+const SizedBox(height: 12),
 
-              hintText: "Sensitivity of the product",
+DropdownButtonFormField<String>(
+  value: selectedDimensionUnit,
 
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+  decoration: InputDecoration(
+    labelText: "Unit",
+
+    border: OutlineInputBorder(
+      borderRadius:
+          BorderRadius.circular(
+        14,
+      ),
+    ),
+  ),
+
+  items:
+      ["mm", "cm", "m", "inch", "ft"]
+          .map(
+            (unit) =>
+                DropdownMenuItem(
+              value: unit,
+              child: Text(unit),
+            ),
+          )
+          .toList(),
+
+  onChanged: (value) {
+    setState(() {
+      selectedDimensionUnit =
+          value!;
+    });
+  },
+),
+
+const SizedBox(height: 10),
+
+Row(
+  children: [
+
+    Expanded(
+      child: TextField(
+        controller: lengthController,
+
+        keyboardType:
+            TextInputType.number,
+
+        decoration: InputDecoration(
+          labelText: "Length",
+
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              14,
             ),
           ),
+        ),
+      ),
+    ),
+
+    const SizedBox(width: 10),
+
+    Expanded(
+      child: TextField(
+        controller: breadthController,
+
+        keyboardType:
+            TextInputType.number,
+
+        decoration: InputDecoration(
+          labelText: "Breadth",
+
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              14,
+            ),
+          ),
+        ),
+      ),
+    ),
+
+    const SizedBox(width: 10),
+
+    Expanded(
+      child: TextField(
+        controller: heightController,
+
+        keyboardType:
+            TextInputType.number,
+
+        decoration: InputDecoration(
+          labelText: "Height",
+
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              14,
+            ),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
+
+          const SizedBox(height: 16),
+
+DropdownButtonFormField<String>(
+  value: selectedFragility,
+
+  decoration: InputDecoration(
+    labelText: "Fragility",
+
+    border: OutlineInputBorder(
+      borderRadius:
+          BorderRadius.circular(
+        14,
+      ),
+    ),
+  ),
+
+  items: const [
+    DropdownMenuItem(
+      value: "Yes",
+      child: Text("Yes"),
+    ),
+
+    DropdownMenuItem(
+      value: "No",
+      child: Text("No"),
+    ),
+  ],
+
+  onChanged: (value) {
+    setState(() {
+      selectedFragility =
+          value!;
+    });
+  },
+),
           const SizedBox(height: 16),
 
           TextField(

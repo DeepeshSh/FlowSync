@@ -94,3 +94,26 @@ async (req, res) => {
     });
   }
 };
+
+exports.deleteCategory =
+  async (req, res) => {
+
+    try {
+
+      await Category.findByIdAndDelete(
+        req.params.id
+      );
+
+      res.json({
+        message:
+          "Category Deleted",
+      });
+
+    } catch (error) {
+
+      res.status(500).json({
+        message:
+          error.message,
+      });
+    }
+  };

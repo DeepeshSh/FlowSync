@@ -24,6 +24,59 @@ final emailController =
 
 final passwordController =
     TextEditingController();
+
+    final FocusNode passwordFocusNode =
+    FocusNode();
+
+bool showPasswordRules = false;
+
+    bool hasUpperCase = false;
+
+bool hasDigit = false;
+
+bool hasSpecialChar = false;
+
+bool hasMinLength = false;
+
+
+void validatePassword(
+  String password,
+) {
+
+  setState(() {
+
+    hasUpperCase =
+        RegExp(r'[A-Z]')
+            .hasMatch(password);
+
+    hasDigit =
+        RegExp(r'[0-9]')
+            .hasMatch(password);
+
+    hasSpecialChar =
+        RegExp(
+          r'[!@#\$%^&*(),.?":{}|<>]',
+        ).hasMatch(password);
+
+    hasMinLength =
+        password.length >= 8;
+  });
+}
+
+@override
+void initState() {
+  super.initState();
+
+  passwordFocusNode.addListener(() {
+
+    setState(() {
+
+      showPasswordRules =
+          passwordFocusNode.hasFocus;
+    });
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -302,8 +355,14 @@ const Text(
 const SizedBox(height: 1),
 
 TextField(
+  focusNode: passwordFocusNode,
+
   controller: passwordController,
   obscureText: obscurePassword,
+
+  onChanged: (value) {
+    validatePassword(value);
+  },
   decoration: InputDecoration(
     hintText: "Enter your password",
     prefixIcon: const Icon(
@@ -328,17 +387,34 @@ TextField(
   ),
 ),
 
-                  const SizedBox(height: 0),
 
-                  Align(
-                    alignment: Alignment.centerRight,
+const SizedBox(height: 9),
 
-                    child: TextButton(
-                      onPressed: () {},
+if (showPasswordRules) ...[
 
-                      child: const Text("Forgot Password?"),
-                    ),
-                  ),
+  const SizedBox(height: 0),
+
+  buildRule(
+    "Minimum 8 characters",
+    hasMinLength,
+  ),
+
+  buildRule(
+    "1 uppercase letter",
+    hasUpperCase,
+  ),
+
+  buildRule(
+    "1 digit",
+    hasDigit,
+  ),
+
+  buildRule(
+    "1 special character",
+    hasSpecialChar,
+  ),
+],
+                  
 
                   const SizedBox(height: 0),
 
@@ -350,6 +426,24 @@ TextField(
                       onPressed: () async {
 
   try {
+
+    if (!hasMinLength ||
+    !hasUpperCase ||
+    !hasDigit ||
+    !hasSpecialChar) {
+
+  ScaffoldMessenger.of(context)
+      .showSnackBar(
+
+    const SnackBar(
+      content: Text(
+        "Password does not meet requirements",
+      ),
+    ),
+  );
+
+  return;
+}
 
     await AuthService().register(
 
@@ -368,17 +462,32 @@ TextField(
 
     if (context.mounted) {
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+  ScaffoldMessenger.of(context)
+      .showSnackBar(
+    const SnackBar(
+      content: Text(
+        "Registration Successful! Please login.",
+      ),
+      backgroundColor: Colors.green,
+    ),
+  );
 
-        const SnackBar(
-          content:
-              Text("Registration Successful"),
-        ),
-      );
+  await Future.delayed(
+    const Duration(seconds: 1),
+  );
 
-      Navigator.pop(context);
-    }
+  if (context.mounted) {
+
+    Navigator.pushReplacement(
+      context,
+
+      MaterialPageRoute(
+        builder: (_) =>
+            const LoginScreen(),
+      ),
+    );
+  }
+}
 
   } on DioException catch (e) {
 
@@ -535,7 +644,7 @@ TextField(
 
                         children: [
                           const Text(
-                            "Welcome Back!",
+                            "Welcome!",
                             style: TextStyle(
                               fontSize: 25,
                               fontWeight: FontWeight.bold,
@@ -546,7 +655,7 @@ TextField(
                           const SizedBox(height: 5),
 
                           const Text(
-                            "Login to manage your\nsanitary business",
+                            "Register to manage your\nsanitary business",
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey,
@@ -578,4 +687,55 @@ TextField(
       ),
     );
   }
+
+  Widget buildRule(
+  String text,
+  bool passed,
+) {
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(
+      vertical: 2,
+    ),
+
+    child: Row(
+      children: [
+
+        Icon(
+          passed
+              ? Icons.check_circle
+              : Icons.cancel,
+
+          size: 18,
+
+          color: passed
+              ? Colors.green
+              : Colors.red,
+        ),
+
+        const SizedBox(width: 8),
+
+        Text(text),
+      ],
+    ),
+  );
 }
+
+@override
+void dispose() {
+
+  nameController.dispose();
+
+  businessNameController.dispose();
+
+  emailController.dispose();
+
+  passwordController.dispose();
+
+  passwordFocusNode.dispose();
+
+  super.dispose();
+}
+}
+
+

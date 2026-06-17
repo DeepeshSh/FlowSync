@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'inventory_screen.dart';
 import 'purchase_screen.dart';
+import 'more_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -12,41 +13,34 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int selectedIndex = 0;
 
-  final List<Widget> screens = const [
-    Center(
-      child: Text(
-        "Home Screen",
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+ final List<Widget> screens = const [
+
+  Center(
+    child: Text(
+      "Home Screen",
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
       ),
     ),
+  ),
 
-    InventoryScreen(),
-
+  InventoryScreen(),
 
   PurchaseScreen(),
-    Center(
-      child: Text(
-        "Purchase Screen",
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
 
-    Center(
-      child: Text(
-        "Selling Screen",
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+  Center(
+    child: Text(
+      "Selling Screen",
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
       ),
     ),
-  ];
+  ),
+
+  MoreScreen(),
+];
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +82,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.menu),
             label: "Sell",
           ),
+
+          BottomNavigationBarItem(
+    icon: Icon(Icons.more_horiz),
+    label: "More",
+  ),
         ],
       ),
     );

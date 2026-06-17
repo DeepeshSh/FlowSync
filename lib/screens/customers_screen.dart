@@ -1,41 +1,40 @@
 import 'package:flutter/material.dart';
 
-import '../models/supplier_model.dart';
-import '../services/supplier_service.dart';
-import 'add_supplier_screen.dart';
-import 'edit_supplier_screen.dart';
+import '../models/customer_model.dart';
+import '../services/customer_service.dart';
+import 'add_customer_screen.dart';
+import 'edit_customer_screen.dart';
 
-class SuppliersScreen extends StatefulWidget {
-  const SuppliersScreen({super.key});
+class CustomersScreen extends StatefulWidget {
+  const CustomersScreen({super.key});
 
   @override
-  State<SuppliersScreen> createState() =>
-      _SuppliersScreenState();
+  State<CustomersScreen> createState() =>
+      _CustomersScreenState();
 }
 
-class _SuppliersScreenState
-    extends State<SuppliersScreen> {
+class _CustomersScreenState
+    extends State<CustomersScreen> {
 
-  List<Supplier> suppliers = [];
+List<Customer> customers = [];
 
   bool isLoading = true;
 
   @override
-  void initState() {
-    super.initState();
-    loadSuppliers();
-  }
+ void initState() {
+  super.initState();
+  loadCustomers();
+}
 
-  Future<void> loadSuppliers() async {
+Future<void> loadCustomers() async {
 
     try {
 
       final data =
-          await SupplierService()
-              .getSuppliers();
-
+          await CustomerService()
+    .getCustomers();
       setState(() {
-        suppliers = data;
+       customers = data;
         isLoading = false;
       });
 
@@ -56,7 +55,7 @@ class _SuppliersScreenState
 
       appBar: AppBar(
         title: const Text(
-          "Suppliers",
+          "Customers",
         ),
 
         actions: [
@@ -68,11 +67,11 @@ class _SuppliersScreenState
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const AddSupplierScreen(),
+                     const AddCustomerScreen() ,
                 ),
               );
 
-              loadSuppliers();
+            loadCustomers();
             },
 
             icon: const Icon(
@@ -89,11 +88,11 @@ class _SuppliersScreenState
                   CircularProgressIndicator(),
             )
 
-          : suppliers.isEmpty
+          :customers.isEmpty
 
               ? const Center(
                   child: Text(
-                    "No Suppliers Found",
+                    "No Customers Found",
                   ),
                 )
 
@@ -103,14 +102,13 @@ class _SuppliersScreenState
                     16,
                   ),
 
-                  itemCount:
-                      suppliers.length,
+                itemCount: customers.length,
 
                   itemBuilder:
                       (context, index) {
 
-                    final supplier =
-                        suppliers[index];
+                    final customer =
+    customers[index];
 
                     return Card(
                       margin:
@@ -136,19 +134,19 @@ class _SuppliersScreenState
                           ),
 
                           child: Icon(
-                            Icons.local_shipping,
+                        Icons.person    ,
                             color:
                                 Colors.white,
                           ),
                         ),
 
-                        title: Text(
-                          supplier.supplierName,
-                        ),
+                      title: Text(
+  customer.customerName,
+),
 
-                        subtitle: Text(
-                          supplier.phone,
-                        ),
+                       subtitle: Text(
+  customer.phone,
+),
 
                         trailing: Row(
   mainAxisSize: MainAxisSize.min,
@@ -163,13 +161,13 @@ class _SuppliersScreenState
 
           MaterialPageRoute(
             builder: (_) =>
-                EditSupplierScreen(
-              supplier: supplier,
+                EditCustomerScreen(
+              customer: customer,
             ),
           ),
         );
 
-        loadSuppliers();
+        loadCustomers();
       },
 
       icon: const Icon(
@@ -188,11 +186,11 @@ class _SuppliersScreenState
           builder: (context) =>
               AlertDialog(
             title: const Text(
-              "Delete Supplier",
+              "Delete Customer",
             ),
 
             content: Text(
-              "Are you sure you want to delete '${supplier.supplierName}'?",
+              "Are you sure you want to delete '${customer.customerName}'?",
             ),
 
             actions: [
@@ -235,12 +233,12 @@ class _SuppliersScreenState
 
           try {
 
-            await SupplierService()
-                .deleteSupplier(
-              supplier.id,
+            await CustomerService()
+                .deleteCustomer(
+              customer.id,
             );
 
-            await loadSuppliers();
+            await loadCustomers();
 
             if (context.mounted) {
 
@@ -249,7 +247,7 @@ class _SuppliersScreenState
                   .showSnackBar(
                 const SnackBar(
                   content: Text(
-                    "Supplier Deleted Successfully",
+                    "Customer Deleted Successfully",
                   ),
                 ),
               );
@@ -257,19 +255,16 @@ class _SuppliersScreenState
 
           } catch (e) {
 
-            if (context.mounted) {
-
-              ScaffoldMessenger.of(
-                      context)
-                  .showSnackBar(
-                SnackBar(
-                  content:
-                      Text(
-                    e.toString(),
-                  ),
+            ScaffoldMessenger.of(
+                    context)
+                .showSnackBar(
+              SnackBar(
+                content:
+                    Text(
+                  e.toString(),
                 ),
-              );
-            }
+              ),
+            );
           }
         }
       },
@@ -297,11 +292,11 @@ class _SuppliersScreenState
             context,
             MaterialPageRoute(
               builder: (_) =>
-                  const AddSupplierScreen(),
+                  const AddCustomerScreen(),
             ),
           );
 
-          loadSuppliers();
+        loadCustomers();
         },
 
         child: const Icon(

@@ -3,27 +3,12 @@ import 'package:dio/dio.dart';
 import '../models/supplier_model.dart';
 
 class SupplierService {
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl:
-          "http://10.0.2.2:5000/api",
-    ),
-  );
+  final Dio dio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:5000/api"));
 
-  Future<List<Supplier>>
-      getSuppliers() async {
+  Future<List<Supplier>> getSuppliers() async {
+    final response = await dio.get("/suppliers");
 
-    final response =
-        await dio.get(
-      "/suppliers",
-    );
-
-    return (response.data as List)
-        .map(
-          (e) =>
-              Supplier.fromJson(e),
-        )
-        .toList();
+    return (response.data as List).map((e) => Supplier.fromJson(e)).toList();
   }
 
   Future<void> createSupplier({
@@ -39,26 +24,21 @@ class SupplierService {
     required String paymentTerms,
     required double openingBalance,
   }) async {
-
     await dio.post(
       "/suppliers",
 
       data: {
-        "supplierName":
-            supplierName,
+        "supplierName": supplierName,
 
-        "contactPerson":
-            contactPerson,
+        "contactPerson": contactPerson,
 
         "phone": phone,
 
         "email": email,
 
-        "gstNumber":
-            gstNumber,
+        "gstNumber": gstNumber,
 
-        "address":
-            address,
+        "address": address,
 
         "city": city,
 
@@ -66,21 +46,49 @@ class SupplierService {
 
         "pincode": pincode,
 
-        "paymentTerms":
-            paymentTerms,
+        "paymentTerms": paymentTerms,
 
-        "openingBalance":
-            openingBalance,
+        "openingBalance": openingBalance,
       },
     );
   }
 
-  Future<void> deleteSupplier(
-    String id,
-  ) async {
+  Future<void> deleteSupplier(String id) async {
+    await dio.delete("/suppliers/$id");
+  }
 
-    await dio.delete(
+  Future<void> updateSupplier({
+    required String id,
+    required String supplierName,
+    required String contactPerson,
+    required String phone,
+    required String email,
+    required String gstNumber,
+    required String address,
+    required String city,
+    required String state,
+    required String pincode,
+    required String paymentTerms,
+    required double openingBalance,
+    required bool isActive,
+  }) async {
+    await dio.put(
       "/suppliers/$id",
+
+      data: {
+        "supplierName": supplierName,
+        "contactPerson": contactPerson,
+        "phone": phone,
+        "email": email,
+        "gstNumber": gstNumber,
+        "address": address,
+        "city": city,
+        "state": state,
+        "pincode": pincode,
+        "paymentTerms": paymentTerms,
+        "openingBalance": openingBalance,
+        "isActive": isActive,
+      },
     );
   }
 }

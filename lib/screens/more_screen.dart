@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'categories_screen.dart';
 import 'suppliers_screen.dart';
+import 'customers_screen.dart';
+
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
@@ -136,10 +138,18 @@ class MoreScreen extends StatelessWidget {
 ),
 
             _menuTile(
-              icon: Icons.people,
-              title: "Customers",
-              onTap: () {},
-            ),
+  icon: Icons.people,
+  title: "Customers",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const CustomersScreen(),
+      ),
+    );
+  },
+),
 
             const SizedBox(height: 20),
 

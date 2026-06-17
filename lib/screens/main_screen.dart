@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'inventory_screen.dart';
 import 'purchase_screen.dart';
 import 'more_screen.dart';
+import 'sales_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -29,15 +30,7 @@ class _MainScreenState extends State<MainScreen> {
 
   PurchaseScreen(),
 
-  Center(
-    child: Text(
-      "Selling Screen",
-      style: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
+  SalesScreen(),
 
   MoreScreen(),
 ];

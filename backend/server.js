@@ -50,6 +50,23 @@ app.use(
   supplierRoutes
 );
 
+const saleRoutes =
+require("./routes/saleRoutes");
+
+app.use(
+  "/api/sales",
+  saleRoutes
+);
+
+const customerRoutes =
+require("./routes/customerRoutes");
+
+app.use(
+  "/api/customers",
+  customerRoutes
+);
+
+
 const PORT =
 process.env.PORT || 5000;
 

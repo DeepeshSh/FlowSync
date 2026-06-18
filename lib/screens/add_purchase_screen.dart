@@ -7,7 +7,6 @@ import '../services/product_service.dart';
 import '../services/supplier_service.dart';
 import '../services/purchase_service.dart';
 
-
 class AddPurchaseScreen extends StatefulWidget {
   const AddPurchaseScreen({super.key});
 
@@ -94,18 +93,63 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
 
   // PRODUCT ROW
 
-  void addItem() {
+  Future<void> addItem() async {
+    final Product? selectedProduct = await showModalBottomSheet<Product>(
+      context: context,
+
+      isScrollControlled: true,
+
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+
+      builder: (context) {
+        return ListView.builder(
+          shrinkWrap: true,
+
+          itemCount: products.length,
+
+          itemBuilder: (context, index) {
+            final product = products[index];
+
+            return ListTile(
+              title: Text(product.name),
+
+              subtitle: Text(product.sku),
+
+              trailing: Text("₹${product.purchasePrice}"),
+
+              onTap: () {
+                Navigator.pop(context, product);
+              },
+            );
+          },
+        );
+      },
+    );
+
+    if (selectedProduct == null) {
+      return;
+    }
+
     setState(() {
-      items.add(
-        PurchaseItem(
-          productId: "",
-          productName: "",
-          sku: "",
-          quantity: 1,
-          rate: 0,
-          amount: 0,
-        ),
+      final item = PurchaseItem(
+        productId: selectedProduct.id,
+
+        productName: selectedProduct.name,
+
+        sku: selectedProduct.sku,
+
+        quantity: 1,
+
+        rate: selectedProduct.purchasePrice,
+
+        amount: selectedProduct.purchasePrice,
       );
+
+      item.calculateAmount();
+
+      items.add(item);
     });
   }
 
@@ -158,109 +202,122 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FC),
+  backgroundColor: const Color(0xFFF5F7FC),
 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+ 
 
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1B2559)),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+  appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
 
-        title: const Text(
-          "New Purchase Order",
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 
-          style: TextStyle(
-            color: Color(0xFF1B2559),
-            fontWeight: FontWeight.bold,
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Color(0xFF1B2559),
+                  ),
+                ),
+
+                const SizedBox(width: 2),
+
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                    children: [
+                      const Text(
+                        "New Purchase",
+
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B2559),
+                        ),
+                      ),
+
+                      const SizedBox(height: 2),
+
+                      Text(
+                        "Create a new purchase order",
+
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE1E8F5)),
+
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.description_outlined,
+                        size: 18,
+                        color: Color(0xFF2F80FF),
+                      ),
+
+                      SizedBox(width: 8),
+
+                      Text(
+                        "Draft",
+
+                        style: TextStyle(
+                          color: Color(0xFF2F80FF),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                IconButton(
+                  onPressed: () {},
+
+                  icon: const Icon(Icons.more_vert, color: Color(0xFF1B2559)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
 
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
           children: [
-            // PURCHASE NUMBER CARD
-            Container(
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(18),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius: BorderRadius.circular(24),
-
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10),
-                ],
-              ),
-
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF2FF),
-
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-
-                    child: const Icon(
-                      Icons.receipt_long,
-                      color: Color(0xFF2F80FF),
-                    ),
-                  ),
-
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        const Text(
-                          "Purchase Number",
-
-                          style: TextStyle(color: Colors.grey),
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-                          purchaseNumber,
-
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-
-                            color: Color(0xFF1B2559),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 20),
-
-            // SUPPLIER DETAILS CARD
             Container(
               padding: const EdgeInsets.all(20),
 
               decoration: BoxDecoration(
                 color: Colors.white,
-
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
 
                 boxShadow: const [
                   BoxShadow(color: Colors.black12, blurRadius: 10),
@@ -268,111 +325,145 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
               ),
 
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
-                  const Text(
-                    "Supplier Details",
-
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-
-                      color: Color(0xFF1B2559),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
+                  // SUPPLIER HEADER
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
                     children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F7F5),
+
+                          borderRadius: BorderRadius.circular(35),
+                        ),
+
+                        child: const Icon(
+                          Icons.local_shipping_outlined,
+                          size: 30,
+                          color: Color(0xFF0F766E),
+                        ),
+                      ),
+
+                      const SizedBox(width: 16),
+
                       Expanded(
-                        child: DropdownButtonFormField<Supplier>(
-                          value: selectedSupplier,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
 
-                          decoration: InputDecoration(
-                            labelText: "Supplier",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+                            Text(
+                              selectedSupplier?.supplierName ??
+                                  "Select Supplier",
+
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1B2559),
+                              ),
                             ),
-                          ),
 
-                          items: suppliers.map((supplier) {
-                            return DropdownMenuItem(
-                              value: supplier,
-                              child: Text(supplier.supplierName),
-                            );
-                          }).toList(),
+                            const SizedBox(height: 1),
 
-                          onChanged: (supplier) {
+                            Text(
+                              selectedSupplier?.phone ?? "",
+
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF4E5),
+
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+
+                              child: Text(
+                                "Opening Balance: ₹${selectedSupplier?.openingBalance.toStringAsFixed(0) ?? "0"}",
+
+                                style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final supplier = await showModalBottomSheet<Supplier>(
+                            context: context,
+
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
+                            ),
+
+                            builder: (_) {
+                              return ListView.builder(
+                                itemCount: suppliers.length,
+
+                                itemBuilder: (context, index) {
+                                  final s = suppliers[index];
+
+                                  return ListTile(
+                                    title: Text(s.supplierName),
+
+                                    subtitle: Text(s.phone),
+
+                                    onTap: () {
+                                      Navigator.pop(context, s);
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          );
+
+                          if (supplier != null) {
                             setState(() {
                               selectedSupplier = supplier;
 
                               contactPersonController.text =
-                                  supplier?.contactPerson ?? "";
+                                  supplier.contactPerson;
 
-                              phoneController.text = supplier?.phone ?? "";
+                              phoneController.text = supplier.phone;
 
                               paymentTermsController.text =
-                                  supplier?.paymentTerms ?? "";
+                                  supplier.paymentTerms;
                             });
-                          },
-                        ),
-                      ),
+                          }
+                        },
 
-                      const SizedBox(width: 10),
+                        icon: const Icon(Icons.edit_outlined, size: 12),
 
-                      SizedBox(
-                        width: 56,
-                        height: 56,
-
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AddSupplierScreen(),
-                              ),
-                            );
-
-                            await loadData();
-                          },
-
-                          child: const Icon(Icons.add),
-                        ),
+                        label: const Text("Change"),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
-                  TextFormField(
-                    controller: contactPersonController,
+                  const Divider(height: 1),
 
-                    decoration: InputDecoration(
-                      labelText: "Contact Person",
+                  const SizedBox(height: 8),
 
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: paymentTermsController,
-
-                    decoration: InputDecoration(
-                      labelText: "Payment Terms",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
+                  // DATE + PAYMENT ROW
                   Row(
                     children: [
                       Expanded(
@@ -395,23 +486,42 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                             }
                           },
 
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: "Purchase Date",
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
 
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
+                            children: [
+                              const Text(
+                                "Purchase Date",
+
+                                style: TextStyle(color: Colors.grey),
                               ),
-                            ),
 
-                            child: Text(
-                              "${purchaseDate.day}/${purchaseDate.month}/${purchaseDate.year}",
-                            ),
+                              const SizedBox(height: 8),
+
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_month_outlined,
+                                    size: 20,
+                                  ),
+
+                                  const SizedBox(width: 8),
+
+                                  Text(
+                                    "${purchaseDate.day}/${purchaseDate.month}/${purchaseDate.year}",
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
 
-                      const SizedBox(width: 12),
+                      Container(
+                        width: 1,
+                        height: 50,
+                        color: Colors.grey.shade300,
+                      ),
 
                       Expanded(
                         child: InkWell(
@@ -419,7 +529,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                             final picked = await showDatePicker(
                               context: context,
 
-                              initialDate: DateTime.now(),
+                              initialDate: deliveryDate ?? DateTime.now(),
 
                               firstDate: DateTime(2024),
 
@@ -433,20 +543,71 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                             }
                           },
 
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: "Delivery Date",
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
 
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                const Text(
+                                  "Delivery Date",
+
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.local_shipping_outlined,
+                                      size: 20,
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Text(
+                                      deliveryDate == null
+                                          ? "Select"
+                                          : "${deliveryDate!.day}/${deliveryDate!.month}/${deliveryDate!.year}",
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Container(
+                        width: 1,
+                        height: 50,
+                        color: Colors.grey.shade300,
+                      ),
+
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 12),
+
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+                              const Text(
+                                "Payment Terms",
+
+                                style: TextStyle(color: Colors.grey),
                               ),
-                            ),
 
-                            child: Text(
-                              deliveryDate == null
-                                  ? "Select"
-                                  : "${deliveryDate!.day}/${deliveryDate!.month}/${deliveryDate!.year}",
-                            ),
+                              const SizedBox(height: 8),
+
+                              Text(
+                                paymentTermsController.text.isEmpty
+                                    ? "Cash"
+                                    : paymentTermsController.text,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -476,32 +637,99 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
 
                 children: [
+                  const Text(
+                    "Products",
+
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2559),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                     children: [
-                      const Text(
-                        "Products",
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "Search products...",
 
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                            prefixIcon: const Icon(Icons.search),
 
-                          color: Color(0xFF1B2559),
+                            filled: true,
+
+                            fillColor: Colors.white,
+
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ),
+
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+
+                              borderSide: const BorderSide(
+                                color: Color(0xFF2F80FF),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
 
-                      ElevatedButton.icon(
-                        onPressed: addItem,
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 130,
+                        height: 54,
 
-                        icon: const Icon(Icons.add),
+                        child: Container(
+                          height: 54,
 
-                        label: const Text("Add Item"),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2F80FF),
 
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2F80FF),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
 
-                          foregroundColor: Colors.white,
+                          child: Material(
+                            color: Colors.transparent,
+
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+
+                              onTap: addItem,
+
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 18),
+
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.add, color: Colors.white),
+
+                                    SizedBox(width: 8),
+
+                                    Text(
+                                      "Add Item",
+
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -511,511 +739,428 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
 
                   if (items.isEmpty)
                     Container(
+                      height: 180,
                       width: double.infinity,
 
-                      padding: const EdgeInsets.all(20),
-
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-
-                      child: const Center(child: Text("No Products Added")),
-                    ),
-
-                  ...List.generate(items.length, (index) {
-                    final item = items[index];
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-
-                      padding: const EdgeInsets.all(16),
-
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                       ),
 
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+
                         children: [
-                          DropdownButtonFormField<Product>(
-                            value: item.productId.isEmpty
-                                ? null
-                                : products.firstWhere(
-                                    (p) => p.id == item.productId,
-                                  ),
-
-                            decoration: InputDecoration(
-                              labelText: "Product",
-
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-
-                            items: products.map((product) {
-                              return DropdownMenuItem(
-                                value: product,
-
-                                child: Text(product.name),
-                              );
-                            }).toList(),
-
-                            onChanged: (product) {
-                              if (product == null) {
-                                return;
-                              }
-
-                              setState(() {
-                                item.productId = product.id;
-
-                                item.productName = product.name;
-
-                                item.sku = product.sku;
-
-                                item.rate = product.purchasePrice;
-
-                                item.calculateAmount();
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 14),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: item.sku,
-
-                                  readOnly: true,
-
-                                  decoration: InputDecoration(
-                                    labelText: "SKU",
-
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(width: 12),
-
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: item.rate.toString(),
-
-                                  keyboardType: TextInputType.number,
-
-                                  decoration: InputDecoration(
-                                    labelText: "Rate",
-
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-
-                                  onChanged: (value) {
-                                    item.rate = double.tryParse(value) ?? 0;
-
-                                    setState(() {
-                                      item.calculateAmount();
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 48,
+                            color: Colors.grey.shade400,
                           ),
 
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: item.quantity.toString(),
+                          const Text(
+                            "No Products Added",
 
-                                  keyboardType: TextInputType.number,
-
-                                  decoration: InputDecoration(
-                                    labelText: "Quantity",
-
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-
-                                  onChanged: (value) {
-                                    item.quantity = int.tryParse(value) ?? 1;
-
-                                    setState(() {
-                                      item.calculateAmount();
-                                    });
-                                  },
-                                ),
-                              ),
-
-                              const SizedBox(width: 12),
-
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 18,
-                                  ),
-
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF5F7FC),
-
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-
-                                    children: [
-                                      const Text(
-                                        "Amount",
-
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-
-                                      const SizedBox(height: 4),
-
-                                      Text(
-                                        "₹${item.amount.toStringAsFixed(2)}",
-
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
 
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 4),
 
-                          Align(
-                            alignment: Alignment.centerRight,
+                          Text(
+                            "Tap Add to start building this order",
 
-                            child: TextButton.icon(
-                              onPressed: () {
-                                removeItem(index);
-                              },
-
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-
-                              label: const Text(
-                                "Remove Item",
-
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
+                            style: TextStyle(color: Colors.grey.shade600),
                           ),
                         ],
                       ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // NOTES CARD
-            Container(
-              padding: const EdgeInsets.all(20),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10),
-                ],
-              ),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  const Text(
-                    "Purchase Notes",
-
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: notesController,
-
-                    maxLines: 4,
-
-                    decoration: InputDecoration(
-                      hintText: "Add notes for supplier...",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                     ),
-                  ),
-                ],
+
+                  if (items.isNotEmpty)
+                    ...List.generate(items.length, (index) {
+                      final item = items[index];
+
+                     return Container(
+  margin: const EdgeInsets.only(bottom: 16),
+
+  padding: const EdgeInsets.all(14),
+
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: const [
+      BoxShadow(
+        color: Colors.black12,
+        blurRadius: 8,
+      ),
+    ],
+  ),
+
+ child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+         
+          children: [
+
+            Text(
+              item.productName,
+
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 4),
 
-            // PAYMENT SUMMARY
-            Container(
-              padding: const EdgeInsets.all(20),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius: BorderRadius.circular(24),
-
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10),
-                ],
-              ),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  const Text(
-                    "Payment Summary",
-
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: advancePaymentController,
-
-                    keyboardType: TextInputType.number,
-
-                    onChanged: (_) {
-                      setState(() {});
-                    },
-
-                    decoration: InputDecoration(
-                      labelText: "Advance Payment",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: discountController,
-
-                    keyboardType: TextInputType.number,
-
-                    onChanged: (_) {
-                      setState(() {});
-                    },
-
-                    decoration: InputDecoration(
-                      labelText: "Discount",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: gstController,
-
-                    keyboardType: TextInputType.number,
-
-                    onChanged: (_) {
-                      setState(() {});
-                    },
-
-                    decoration: InputDecoration(
-                      labelText: "GST",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: transportController,
-
-                    keyboardType: TextInputType.number,
-
-                    onChanged: (_) {
-                      setState(() {});
-                    },
-
-                    decoration: InputDecoration(
-                      labelText: "Transport Charges",
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ORDER SUMMARY
-            Container(
-              padding: const EdgeInsets.all(20),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius: BorderRadius.circular(24),
-
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10),
-                ],
-              ),
-
-              child: Column(
-                children: [
-                  _summaryRow("Subtotal", subtotal),
-
-                  _summaryRow("Discount", discount),
-
-                  _summaryRow("GST", gst),
-
-                  _summaryRow("Transport", transportCharges),
-
-                  const Divider(),
-
-                  _summaryRow("Grand Total", grandTotal, isBold: true),
-
-                  _summaryRow("Advance Paid", advancePayment),
-
-                  const Divider(),
-
-                  _summaryRow("Balance Due", balanceDue, isBold: true),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Draft Saved")),
-                      );
-                    },
 
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 55),
+                Text(
+                  "Code: ${item.sku}",
 
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-
-                    child: const Text("Save Draft"),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
 
-                Expanded(
-                  flex: 2,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
 
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (selectedSupplier == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please select supplier"),
-                          ),
-                        );
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(0xFFEAF2FF),
 
-                        return;
-                      }
-
-                      if (items.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please add products")),
-                        );
-
-                        return;
-                      }
-await PurchaseService().createPurchase(
-  purchaseNumber: purchaseNumber,
-
-  supplierName:
-      selectedSupplier!.supplierName,
-
-  items: items
-      .map(
-        (item) => item.toJson(),
-      )
-      .toList(),
-
-  totalAmount: grandTotal,
-
-  paymentStatus: "Pending",
-);// BACKEND SAVE WILL BE CONNECTED HERE
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Purchase Order Created")),
-                      );
-
-                      Navigator.pop(context);
-                    },
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F80FF),
-
-                      foregroundColor: Colors.white,
-
-                      minimumSize: const Size(double.infinity, 55),
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                    borderRadius:
+                        BorderRadius.circular(
+                      8,
                     ),
+                  ),
 
-                    child: const Text("Review & Place Order"),
+                  child: const Text(
+                    "Product",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color:
+                          Color(0xFF2F80FF),
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
+
+            const SizedBox(height: 8),
+
+            Text(
+              "₹${item.rate.toStringAsFixed(2)} / piece",
+
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color:
+                          const Color(
+                        0xFFE2E8F0,
+                      ),
+                    ),
+
+                    borderRadius:
+                        BorderRadius.circular(
+                      12,
+                    ),
+                  ),
+
+                  child: Row(
+                    children: [
+
+                      IconButton(
+                        onPressed: () {
+                          if (item.quantity > 1) {
+                            setState(() {
+                              item.quantity--;
+                              item.calculateAmount();
+                            });
+                          }
+                        },
+
+                        icon: const Icon(
+                          Icons.remove,
+                        ),
+                      ),
+
+                      Text(
+                        item.quantity.toString(),
+                        style:
+                            const TextStyle(
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            item.quantity++;
+                            item.calculateAmount();
+                          });
+                        },
+
+                        icon:
+                            const Icon(Icons.add),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Spacer(),
+
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.end,
+
+                  children: [
+
+                    Text(
+                      "₹${item.amount.toStringAsFixed(2)}",
+
+                      style:
+                          const TextStyle(
+                        fontSize: 20,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () {
+                        removeItem(index);
+                      },
+
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+                   ],
+        ),
+      );
+                    }),
+
+             ],
+),
+),
+
+                  
+                  // NOTES CARD
+                  const SizedBox(height: 20),
+
+Container(
+  padding: const EdgeInsets.all(20),
+
+  decoration: BoxDecoration(
+    color: Colors.white,
+
+    borderRadius: BorderRadius.circular(20),
+
+    boxShadow: const [
+      BoxShadow(
+        color: Colors.black12,
+        blurRadius: 8,
+      ),
+    ],
+  ),
+
+  child: Column(
+    crossAxisAlignment:
+        CrossAxisAlignment.start,
+
+    children: [
+
+      const Text(
+        "Purchase Notes",
+
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1B2559),
         ),
       ),
-    );
-  }
 
+      const SizedBox(height: 16),
+
+      TextFormField(
+        controller: notesController,
+
+        maxLines: 1,
+
+        decoration: InputDecoration(
+          hintText:
+              "Add notes for supplier...",
+
+          filled: true,
+
+          fillColor:
+              const Color(0xFFF8FAFC),
+
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
+          ),
+
+          enabledBorder:
+              OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
+
+            borderSide:
+                const BorderSide(
+              color:
+                  Color(0xFFE2E8F0),
+            ),
+          ),
+
+          focusedBorder:
+              OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(
+              16,
+            ),
+
+            borderSide:
+                const BorderSide(
+              color:
+                  Color(0xFF2F80FF),
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+                  
+
+                           const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Draft Saved")),
+                            );
+                          },
+
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 55),
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+
+                          child: const Text("Save Draft"),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        flex: 2,
+
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (selectedSupplier == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please select supplier"),
+                                ),
+                              );
+
+                              return;
+                            }
+
+                            if (items.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please add products"),
+                                ),
+                              );
+
+                              return;
+                            }
+                            await PurchaseService().createPurchase(
+                              purchaseNumber: purchaseNumber,
+
+                              supplierName: selectedSupplier!.supplierName,
+
+                              items: items
+                                  .map((item) => item.toJson())
+                                  .toList(),
+
+                              totalAmount: grandTotal,
+
+                              paymentStatus: "Pending",
+                            ); // BACKEND SAVE WILL BE CONNECTED HERE
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Purchase Order Created"),
+                              ),
+                            );
+
+                            Navigator.pop(context);
+                          },
+
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2F80FF),
+
+                            foregroundColor: Colors.white,
+
+                            minimumSize: const Size(double.infinity, 55),
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+
+                          child: const Text("Review & Place Order"),
+                        ),
+                      ),
+                    ],
+                  ),
+                                                                                       ],
+              ), // Main Column
+            ), // SingleChildScrollView
+           // body
+         // Scaffold
+      );
+    } // build
+
+         
   Widget _summaryRow(String title, double value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

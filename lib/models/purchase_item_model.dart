@@ -1,62 +1,57 @@
 class PurchaseItem {
 
- String productId;
+  String productId;
+  String productName;
+  String sku;
 
-   String productName;
+  String unit; // NEW
 
-   String sku;
+  int quantity;
 
- int quantity;
-
- double rate;
-
-   double amount;
+  double rate;
+  double amount;
 
   PurchaseItem({
     required this.productId,
     required this.productName,
     required this.sku,
+    required this.unit, // NEW
     required this.quantity,
     required this.rate,
     required this.amount,
   });
 
   factory PurchaseItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return PurchaseItem(
-      productId:
-          json["productId"] ?? "",
+  Map<String, dynamic> json,
+) {
+  return PurchaseItem(
+    productId: json["productId"] ?? "",
+    productName: json["productName"] ?? "",
+    sku: json["sku"] ?? "",
 
-      productName:
-          json["productName"] ?? "",
+    unit: json["unit"] ?? "PCS",
 
-      sku:
-          json["sku"] ?? "",
+    quantity: json["quantity"] ?? 0,
 
-      quantity:
-          json["quantity"] ?? 0,
+    rate: (json["rate"] ?? 0).toDouble(),
 
-      rate:
-          (json["rate"] ?? 0)
-              .toDouble(),
+    amount: (json["amount"] ?? 0).toDouble(),
+  );
+}
 
-      amount:
-          (json["amount"] ?? 0)
-              .toDouble(),
-    );
-  }
+ Map<String, dynamic> toJson() {
+  return {
+    "productId": productId,
+    "productName": productName,
+    "sku": sku,
 
-  Map<String, dynamic> toJson() {
-    return {
-      "productId": productId,
-      "productName": productName,
-      "sku": sku,
-      "quantity": quantity,
-      "rate": rate,
-      "amount": amount,
-    };
-  }
+    "unit": unit,
+
+    "quantity": quantity,
+    "rate": rate,
+    "amount": amount,
+  };
+}
 
   void calculateAmount() {
   amount = quantity * rate;

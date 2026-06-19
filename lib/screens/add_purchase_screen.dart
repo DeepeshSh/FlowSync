@@ -133,20 +133,17 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     }
 
     setState(() {
-      final item = PurchaseItem(
-        productId: selectedProduct.id,
+     final item = PurchaseItem(
+  productId: selectedProduct.id,
+  productName: selectedProduct.name,
+  sku: selectedProduct.sku,
 
-        productName: selectedProduct.name,
+  unit: selectedProduct.unit,
 
-        sku: selectedProduct.sku,
-
-        quantity: 1,
-
-        rate: selectedProduct.purchasePrice,
-
-        amount: selectedProduct.purchasePrice,
-      );
-
+  quantity: 1,
+  rate: selectedProduct.purchasePrice,
+  amount: selectedProduct.purchasePrice,
+);
       item.calculateAmount();
 
       items.add(item);
@@ -202,11 +199,210 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     }
 
     return Scaffold(
-  backgroundColor: const Color(0xFFF5F7FC),
+      backgroundColor: const Color(0xFFF5F7FC),
 
- 
+bottomNavigationBar: Container(
+  padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
 
-  appBar: PreferredSize(
+  decoration: const BoxDecoration(
+    color: Colors.white,
+
+    borderRadius: BorderRadius.only(
+      topLeft: Radius.circular(28),
+      topRight: Radius.circular(28),
+    ),
+
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black12,
+        blurRadius: 12,
+      ),
+    ],
+  ),
+
+  child: SafeArea(
+    top: false,
+
+    child: Row(
+      children: [
+
+        // LEFT SUMMARY
+        Expanded(
+          flex: 1,
+
+          child: Row(
+            children: [
+
+              Container(
+                width: 68,
+                height: 68,
+
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7FC),
+                  borderRadius: BorderRadius.circular(31),
+                ),
+
+                child: const Icon(
+                  Icons.shopping_cart_outlined,
+                  color: Color(0xFF1B2559),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
+                  children: [
+
+                    Text(
+                      "${items.length} Items",
+
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      "Sub Total   ₹${subtotal.toStringAsFixed(0)}",
+
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 16,
+                      ),
+                    ),
+
+                    Text(
+                      "Tax (GST)   ₹${gst.toStringAsFixed(0)}",
+
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Container(
+          width: 1,
+          height: 70,
+          color: Colors.grey.shade300,
+        ),
+
+        const SizedBox(width: 16),
+
+        // RIGHT SIDE
+        Expanded(
+  flex: 1,
+
+  child: Padding(
+    padding: const EdgeInsets.only(top: 8),
+
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+              const Text(
+                "Total Amount",
+
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1B2559),
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                "₹${grandTotal.toStringAsFixed(2)}",
+
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F9D94),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // create purchase
+                  },
+
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFF143D7A),
+
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                        16,
+                      ),
+                    ),
+                  ),
+
+                  child: const Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+
+  children: [
+
+    Expanded(
+      child: Text(
+        "Place Order",
+
+        textAlign: TextAlign.center,
+
+        overflow: TextOverflow.ellipsis,
+
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+
+    SizedBox(width: 8),
+
+    CircleAvatar(
+      radius: 10,
+      backgroundColor: Colors.white,
+
+      child: Icon(
+        Icons.arrow_forward,
+        size: 14,
+        color: Color(0xFF143D7A),
+      ),
+    ),
+  ],
+),
+                )
+                ),
+      ],
+    ),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+      appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
 
         child: SafeArea(
@@ -311,7 +507,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.all(20),
 
@@ -780,387 +976,364 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                     ...List.generate(items.length, (index) {
                       final item = items[index];
 
-                     return Container(
-  margin: const EdgeInsets.only(bottom: 16),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
 
-  padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(14),
 
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
-    boxShadow: const [
-      BoxShadow(
-        color: Colors.black12,
-        blurRadius: 8,
-      ),
-    ],
-  ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 8),
+                          ],
+                        ),
 
- child: Column(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: [
+                            Row(
   crossAxisAlignment: CrossAxisAlignment.start,
-         
-          children: [
 
-            Text(
-              item.productName,
+  children: [
 
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+    Expanded(
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
+        children: [
+
+          Text(
+            item.productName,
+
+            style: const TextStyle(
+              fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.0,
+            ),
+          ),
+
+          const SizedBox(height: 1),
+
+          Row(
+            children: [
+
+              Text(
+                "Code: ${item.sku}",
+
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 4),
+              const SizedBox(width: 8),
 
-            Row(
-              children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
 
-                Text(
-                  "Code: ${item.sku}",
+                decoration: BoxDecoration(
+                  color:
+                      const Color(0xFFEAF2FF),
 
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
+                  borderRadius:
+                      BorderRadius.circular(
+                    8,
                   ),
                 ),
 
-                const SizedBox(width: 8),
-
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-
-                  decoration: BoxDecoration(
-                    color:
-                        const Color(0xFFEAF2FF),
-
-                    borderRadius:
-                        BorderRadius.circular(
-                      8,
-                    ),
-                  ),
-
-                  child: const Text(
-                    "Product",
-                    style: TextStyle(
-                      fontSize: 11,
-                      color:
-                          Color(0xFF2F80FF),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              "₹${item.rate.toStringAsFixed(2)} / piece",
-
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
+                
               ),
-            ),
+            ],
+          ),
+        
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
 
-            const SizedBox(height: 12),
+  children: [
 
-            Row(
-              children: [
-
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color:
-                          const Color(
-                        0xFFE2E8F0,
-                      ),
-                    ),
-
-                    borderRadius:
-                        BorderRadius.circular(
-                      12,
-                    ),
-                  ),
-
-                  child: Row(
-                    children: [
-
-                      IconButton(
-                        onPressed: () {
-                          if (item.quantity > 1) {
-                            setState(() {
-                              item.quantity--;
-                              item.calculateAmount();
-                            });
-                          }
-                        },
-
-                        icon: const Icon(
-                          Icons.remove,
-                        ),
-                      ),
-
-                      Text(
-                        item.quantity.toString(),
-                        style:
-                            const TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            item.quantity++;
-                            item.calculateAmount();
-                          });
-                        },
-
-                        icon:
-                            const Icon(Icons.add),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.end,
-
-                  children: [
-
-                    Text(
-                      "₹${item.amount.toStringAsFixed(2)}",
-
-                      style:
-                          const TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    IconButton(
-                      onPressed: () {
-                        removeItem(index);
-                      },
-
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-                   ],
-        ),
-      );
-                    }),
-
-             ],
-),
-),
-
-                  
-                  // NOTES CARD
-                  const SizedBox(height: 20),
-
-Container(
-  padding: const EdgeInsets.all(20),
-
-  decoration: BoxDecoration(
-    color: Colors.white,
-
-    borderRadius: BorderRadius.circular(20),
-
-    boxShadow: const [
-      BoxShadow(
-        color: Colors.black12,
-        blurRadius: 8,
+    Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
       ),
-    ],
-  ),
 
-  child: Column(
-    crossAxisAlignment:
-        CrossAxisAlignment.start,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF2FF),
+
+        borderRadius: BorderRadius.circular(12),
+
+        border: Border.all(
+          color: const Color(0xFFD6E7FF),
+        ),
+      ),
+
+      child: Text(
+  "Total: ₹${item.amount.toStringAsFixed(2)}",
+
+  style: const TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF2F80FF),
+  ),
+),
+    ),
+
+   
+  ],
+),
+        
+        ],
+    ),
+    ),
+  
+    Column(
+      children: [
+
+        SizedBox(
+  width: 140,
+
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
     children: [
 
-      const Text(
-        "Purchase Notes",
+      // MINUS BUTTON
+      Container(
+        width: 36,
+        height: 36,
 
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF1B2559),
+        decoration: BoxDecoration(
+          color: Colors.white,
+
+          borderRadius: BorderRadius.circular(10),
+
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
+          ),
+        ),
+
+        child: IconButton(
+          padding: EdgeInsets.zero,
+
+          onPressed: () {
+            if (item.quantity > 1) {
+              setState(() {
+                item.quantity--;
+                item.calculateAmount();
+              });
+            }
+          },
+
+          icon: const Icon(
+            Icons.remove,
+            size: 18,
+            color: Color(0xFF1B2559),
+          ),
         ),
       ),
 
-      const SizedBox(height: 16),
+      // QUANTITY
+      SizedBox(
+  width: 55,
+
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+
+    children: [
 
       TextFormField(
-        controller: notesController,
+        initialValue: item.quantity.toString(),
 
-        maxLines: 1,
+        textAlign: TextAlign.center,
 
-        decoration: InputDecoration(
-          hintText:
-              "Add notes for supplier...",
+        keyboardType: TextInputType.number,
 
-          filled: true,
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
 
-          fillColor:
-              const Color(0xFFF8FAFC),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1B2559),
+        ),
 
-          border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(
-              16,
-            ),
+        onChanged: (value) {
+          item.quantity = int.tryParse(value) ?? 1;
+
+          setState(() {
+            item.calculateAmount();
+          });
+        },
+      ),
+
+      Text(
+        item.unit.isEmpty ? "PCS" : item.unit,
+
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.grey,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ],
+  ),
+),
+
+      // PLUS BUTTON
+      Container(
+        width: 40,
+        height: 40,
+
+        decoration: BoxDecoration(
+          color: Colors.white,
+
+          borderRadius: BorderRadius.circular(10),
+
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
           ),
+        ),
 
-          enabledBorder:
-              OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(
-              16,
-            ),
+        child: IconButton(
+          padding: EdgeInsets.zero,
 
-            borderSide:
-                const BorderSide(
-              color:
-                  Color(0xFFE2E8F0),
-            ),
-          ),
+          onPressed: () {
+            setState(() {
+              item.quantity++;
+              item.calculateAmount();
+            });
+          },
 
-          focusedBorder:
-              OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(
-              16,
-            ),
-
-            borderSide:
-                const BorderSide(
-              color:
-                  Color(0xFF2F80FF),
-              width: 1.5,
-            ),
+          icon: const Icon(
+            Icons.add,
+            size: 18,
+            color: Color(0xFF1B2559),
           ),
         ),
       ),
     ],
   ),
 ),
-                  
+      
 
-                           const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Draft Saved")),
-                            );
-                          },
+        const SizedBox(height: 8),
 
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 55),
+        IconButton(
+          onPressed: () {
+            removeItem(index);
+          },
 
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
+          icon: const Icon(
+            Icons.delete_outline,
+            color: Colors.red,
+          ),
+        ),
+      ],
+    ),
+  ],
+),
 
-                          child: const Text("Save Draft"),
+                                  
+                               
+
+
+// PRICE + DELETE
+
+                          ],
                         ),
-                      ),
+                      );
+                    }),
+                ],
+              ),
+            ),
 
-                      const SizedBox(width: 12),
+            // NOTES CARD
+            const SizedBox(height: 20),
 
-                      Expanded(
-                        flex: 2,
+            Container(
+              padding: const EdgeInsets.all(20),
 
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (selectedSupplier == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please select supplier"),
-                                ),
-                              );
+              decoration: BoxDecoration(
+                color: Colors.white,
 
-                              return;
-                            }
+                borderRadius: BorderRadius.circular(20),
 
-                            if (items.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please add products"),
-                                ),
-                              );
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 8),
+                ],
+              ),
 
-                              return;
-                            }
-                            await PurchaseService().createPurchase(
-                              purchaseNumber: purchaseNumber,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
 
-                              supplierName: selectedSupplier!.supplierName,
+                children: [
+                  const Text(
+                    "Purchase Notes",
 
-                              items: items
-                                  .map((item) => item.toJson())
-                                  .toList(),
-
-                              totalAmount: grandTotal,
-
-                              paymentStatus: "Pending",
-                            ); // BACKEND SAVE WILL BE CONNECTED HERE
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Purchase Order Created"),
-                              ),
-                            );
-
-                            Navigator.pop(context);
-                          },
-
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2F80FF),
-
-                            foregroundColor: Colors.white,
-
-                            minimumSize: const Size(double.infinity, 55),
-
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-
-                          child: const Text("Review & Place Order"),
-                        ),
-                      ),
-                    ],
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2559),
+                    ),
                   ),
-                                                                                       ],
-              ), // Main Column
-            ), // SingleChildScrollView
-           // body
-         // Scaffold
-      );
-    } // build
 
-         
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: notesController,
+
+                    maxLines: 1,
+
+                    decoration: InputDecoration(
+                      hintText: "Add notes for supplier...",
+
+                      filled: true,
+
+                      fillColor: const Color(0xFFF8FAFC),
+
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+
+                        borderSide: const BorderSide(
+                          color: Color(0xFF2F80FF),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+           
+          ],
+        ), // Main Column
+      ), // SingleChildScrollView
+      // body
+      // Scaffold
+    );
+  } // build
+
   Widget _summaryRow(String title, double value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

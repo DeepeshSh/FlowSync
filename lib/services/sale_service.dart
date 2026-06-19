@@ -25,13 +25,13 @@ class SaleService {
         )
         .toList();
   }
-
-  Future<void> createSale({
-    required String saleNumber,
-    required String customerName,
-    required double totalAmount,
-    required String paymentStatus,
-  }) async {
+Future<void> createSale({
+  required String saleNumber,
+  required String customerName,
+  required List<Map<String, dynamic>> items,
+  required double totalAmount,
+  required String paymentStatus,
+}) async {
 
     await dio.post(
       "/sales",
@@ -43,7 +43,7 @@ class SaleService {
         "customerName":
             customerName,
 
-        "items": [],
+        "items": items,
 
         "totalAmount":
             totalAmount,

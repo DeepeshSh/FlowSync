@@ -71,6 +71,14 @@ flutter:
      - lib/assets/images/pipes.png
      - lib/assets/images/storage.png
      - lib/assets/images/washbasin.png
+     - lib/assets/images/paper_plane.png
+     - lib/assets/images/homeimage.png
+     - lib/assets/images/grass.png
+     - lib/assets/images/gears.png
+     - lib/assets/images/homeimage (2).png
+     - lib/assets/images/grass-removebg-preview.png
+     - lib/assets/images/gears-removebg-preview.png
+     - lib/assets/images/warehouse.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

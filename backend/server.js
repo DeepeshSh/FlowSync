@@ -67,9 +67,21 @@ app.use(
 );
 
 
+
+const warehouseRoutes =
+require("./routes/warehouse.routes");
+
+
+app.use(
+  "/api/warehouses",
+  warehouseRoutes
+);
+
+
 const PORT =
 process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server Running On Port ${PORT}`);
 });
+

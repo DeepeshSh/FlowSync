@@ -1,0 +1,89 @@
+import 'package:dio/dio.dart';
+import '../models/warehouse_model.dart';
+
+class WarehouseService {
+  final Dio dio = Dio();
+
+  final String baseUrl =
+      "http://10.0.2.2:5000/api/warehouses";
+
+  Future<List<Warehouse>>
+      getWarehouses() async {
+
+    final response =
+        await dio.get(baseUrl);
+
+    return (response.data as List)
+        .map(
+          (json) =>
+              Warehouse.fromJson(json),
+        )
+        .toList();
+  }
+
+  Future<void> createWarehouse({
+    required String name,
+    required String code,
+    required String address,
+    required String city,
+    required String contactPerson,
+    required String phone,
+    required String notes,
+    bool isActive = true,
+  }) async {
+
+    await dio.post(
+      baseUrl,
+
+      data: {
+        "name": name,
+        "code": code,
+        "address": address,
+        "city": city,
+        "contactPerson":
+            contactPerson,
+        "phone": phone,
+        "isActive": isActive,
+        "notes": notes,
+      },
+    );
+  }
+
+  Future<void> updateWarehouse({
+    required String id,
+    required String name,
+    required String code,
+    required String address,
+    required String city,
+    required String contactPerson,
+    required String phone,
+    required String notes,
+    required bool isActive,
+  }) async {
+
+    await dio.put(
+      "$baseUrl/$id",
+
+      data: {
+        "name": name,
+        "code": code,
+        "address": address,
+        "city": city,
+        "contactPerson":
+            contactPerson,
+        "phone": phone,
+        "isActive": isActive,
+        "notes": notes,
+      },
+    );
+  }
+
+  Future<void> deleteWarehouse(
+    String id,
+  ) async {
+
+    await dio.delete(
+      "$baseUrl/$id",
+    );
+  }
+}

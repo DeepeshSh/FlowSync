@@ -11,7 +11,13 @@ class WarehouseService {
       getWarehouses() async {
 
     final response =
-        await dio.get(baseUrl);
+    await dio.get(baseUrl);
+
+print(
+  "WAREHOUSES RESPONSE:",
+);
+
+print(response.data);
 
     return (response.data as List)
         .map(
@@ -22,61 +28,68 @@ class WarehouseService {
   }
 
   Future<void> createWarehouse({
-    required String name,
-    required String code,
-    required String address,
-    required String city,
-    required String contactPerson,
-    required String phone,
-    required String notes,
-    bool isActive = true,
-  }) async {
+  required String name,
+  required String code,
+  required String address,
+  required String city,
+  required String contactPerson,
+  required String phone,
+  required String warehouseType,
+  required String notes,
+  bool isActive = true,
+}) async {
 
+final response =
     await dio.post(
-      baseUrl,
+  baseUrl,
 
-      data: {
-        "name": name,
-        "code": code,
-        "address": address,
-        "city": city,
-        "contactPerson":
-            contactPerson,
-        "phone": phone,
-        "isActive": isActive,
-        "notes": notes,
-      },
-    );
-  }
+    data: {
+      "name": name,
+      "code": code,
+      "address": address,
+      "city": city,
+      "contactPerson": contactPerson,
+      "phone": phone,
+      "warehouseType": warehouseType,
+      "isActive": isActive,
+      "notes": notes,
+    },
+  );
+  print(
+  "WAREHOUSE CREATED:",
+);
 
+print(response.data);
+}
   Future<void> updateWarehouse({
-    required String id,
-    required String name,
-    required String code,
-    required String address,
-    required String city,
-    required String contactPerson,
-    required String phone,
-    required String notes,
-    required bool isActive,
-  }) async {
+   
+  required String name,
+  required String code,
+  required String address,
+  required String city,
+  required String contactPerson,
+  required String phone,
+  required String warehouseType,
+  required String notes,
+  bool isActive = true,
+}) async {
 
-    await dio.put(
-      "$baseUrl/$id",
+  await dio.post(
+    baseUrl,
 
-      data: {
-        "name": name,
-        "code": code,
-        "address": address,
-        "city": city,
-        "contactPerson":
-            contactPerson,
-        "phone": phone,
-        "isActive": isActive,
-        "notes": notes,
-      },
-    );
-  }
+    data: {
+      "name": name,
+      "code": code,
+      "address": address,
+      "city": city,
+      "contactPerson": contactPerson,
+      "phone": phone,
+      "warehouseType": warehouseType,
+      "isActive": isActive,
+      "notes": notes,
+    },
+  );
+}
 
   Future<void> deleteWarehouse(
     String id,

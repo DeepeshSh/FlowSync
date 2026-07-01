@@ -79,6 +79,12 @@ flutter:
      - lib/assets/images/grass-removebg-preview.png
      - lib/assets/images/gears-removebg-preview.png
      - lib/assets/images/warehouse.png
+     - lib/assets/images/warehouse_rack.png 
+     - lib/assets/images/warehouse_pipes.png        
+     - lib/assets/images/crate.png    
+     - lib/assets/images/inventory_rack.png   
+     - lib/assets/images/inventory_header.png 
+     - lib/assets/images/addproductheader.png  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

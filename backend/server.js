@@ -77,6 +77,13 @@ app.use(
   warehouseRoutes
 );
 
+const variantRoutes =
+require("./routes/variant.routes");
+
+app.use(
+"/api/variants",
+variantRoutes
+);
 
 const PORT =
 process.env.PORT || 5000;

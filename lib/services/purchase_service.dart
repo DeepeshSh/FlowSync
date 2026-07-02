@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-
+import '../config/api_config.dart';
 import '../models/purchase_model.dart';
 
 class PurchaseService {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:5000/api"));
+  final Dio dio = Dio(BaseOptions(baseUrl: "${ApiConfig.baseUrl}"));
 
   Future<List<Purchase>> getPurchases() async {
     final response = await dio.get("/purchases");

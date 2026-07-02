@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'manage_variants_screen.dart';
 import 'add_product_screen.dart';
 import '../services/product_service.dart';
 import '../models/product_model.dart';
@@ -586,7 +586,35 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ],
                   ),
                   InkWell(
-                    onTap: () => _openVariantSheet(item),
+  onTap: () async {
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ManageVariantsScreen(
+          product: Product(
+            id: item.id,
+            name: item.name,
+            sku: item.sku,
+            brandName: item.brand,
+            unit: "Piece",
+            storageLocation: item.rack,
+            stock: item.totalStock,
+            lowStockThreshold: 5,
+            purchasePrice: item.buyPrice,
+            sellingPrice: item.sellPrice,
+            categoryName: item.category,
+            imageUrl: item.imageUrl,
+          ),
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _fetchLiveBackendData();
+    }
+
+  },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -701,93 +729,5 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  void _openVariantSheet(InventoryItem item) {
-    List<ProductVariant> localCopy = item.variants.map((v) => ProductVariant(id: v.id, name: v.name, stock: v.stock)).toList();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.only(top: 24, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Manage Variants - ${item.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF64748B)),
-                      onPressed: () => Navigator.pop(context),
-                    )
-                  ],
-                ),
-                const Divider(height: 20),
-                ...localCopy.map((variant) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(variant.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF334155))),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: Color(0xFF94A3B8)),
-                              onPressed: () => setModalState(() => variant.stock > 0 ? variant.stock-- : null),
-                            ),
-                            Container(
-                              alignment: Alignment.center,
-                              constraints: const BoxConstraints(minWidth: 30),
-                              child: Text('${variant.stock}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add_circle_outline, color: Color(0xFF2563EB)),
-                              onPressed: () => setModalState(() => variant.stock++),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB), 
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                    onPressed: () async {
-                      try {
-                        Navigator.pop(context);
-                        int syncTotal = localCopy.fold(0, (sum, v) => sum + v.stock);
-                        await _productService.updateProductStock(item.id, syncTotal);
-                        if (!mounted) return;
-                        _fetchLiveBackendData();
-                      } catch (e) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed syncing variant values: $e'), backgroundColor: const Color(0xFFEF4444)),
-                        );
-                      }
-                    },
-                    child: const Text('Save Variant Configuration', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  ),
-                )
-              ],
-            ),
-          );
-        });
-      },
-    );
-  }
+  
 }

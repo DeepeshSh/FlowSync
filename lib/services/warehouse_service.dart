@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
 import '../models/warehouse_model.dart';
+import '../config/api_config.dart';
 
 class WarehouseService {
   final Dio dio = Dio();
 
   final String baseUrl =
-      "http://10.0.2.2:5000/api/warehouses";
+      "${ApiConfig.baseUrl}/warehouses";
 
   Future<List<Warehouse>>
       getWarehouses() async {

@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-
+import '../config/api_config.dart';
 import '../models/supplier_model.dart';
 
 class SupplierService {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:5000/api"));
+  final Dio dio = Dio(BaseOptions(baseUrl: "${ApiConfig.baseUrl}"));
 
   Future<List<Supplier>> getSuppliers() async {
     final response = await dio.get("/suppliers");

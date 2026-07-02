@@ -1,19 +1,20 @@
 import 'package:dio/dio.dart';
 import '../models/category_model.dart';
+import '../config/api_config.dart';
 
 class CategoryService {
 
   final Dio dio = Dio();
 
   final String baseUrl =
-      "http://10.0.2.2:5000";
+      "${ApiConfig.baseUrl}/categories";
 
   Future<List<Category>>
       getCategories() async {
 
     final response =
         await dio.get(
-      "$baseUrl/api/categories",
+      "$baseUrl",
     );
 
     return (response.data as List)

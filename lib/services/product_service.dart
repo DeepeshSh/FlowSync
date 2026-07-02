@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import '../models/product_model.dart';
+import '../config/api_config.dart';
 
 class ProductService {
   final Dio dio = Dio();
 
   // GET PRODUCTS
   Future<List<Product>> getProducts() async {
-    final response = await dio.get("http://10.0.2.2:5000/api/products");
+    final response = await dio.get("${ApiConfig.baseUrl}/products");
 
     final List data = response.data["data"];
 
@@ -46,7 +47,7 @@ class ProductService {
   }) async {
     try {
       final response = await dio.post(
-        "http://10.0.2.2:5000/api/products",
+        "${ApiConfig.baseUrl}/products",
         data: {
           "name": name,
           "sku": sku,
@@ -105,7 +106,7 @@ class ProductService {
     required String imageUrl,
   }) async {
     await dio.put(
-      "http://10.0.2.2:5000/api/products/$id",
+      "${ApiConfig.baseUrl}/products/$id",
       data: {
         "name": name,
         "sku": sku,
@@ -125,7 +126,7 @@ class ProductService {
   Future<void> updateProductStock(String id, int syncTotal) async {
     try {
       await dio.patch(
-        "http://10.0.2.2:5000/api/products/$id",
+        "${ApiConfig.baseUrl}/products/$id",
         data: {
           "stock": syncTotal,
         },
@@ -139,7 +140,7 @@ class ProductService {
   // DELETE PRODUCT
   Future<void> deleteProduct(String id) async {
     await dio.delete(
-      "http://10.0.2.2:5000/api/products/$id",
+      "${ApiConfig.baseUrl}/products/$id",
     );
   }
 }

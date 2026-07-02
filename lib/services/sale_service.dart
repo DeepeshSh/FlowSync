@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-
+import '../config/api_config.dart';
 import '../models/sale_model.dart';
 
 class SaleService {
@@ -7,7 +7,7 @@ class SaleService {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl:
-          "http://10.0.2.2:5000/api",
+          "${ApiConfig.baseUrl}",
     ),
   );
 

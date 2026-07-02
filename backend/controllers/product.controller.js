@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-
+const Variant = require("../models/Variant");
 // =============================
 // CREATE PRODUCT
 // =============================
@@ -140,9 +140,19 @@ exports.getProductById = async (req, res) => {
       });
     }
 
+    const variants = await Variant.find({
+      productId: product._id,
+      isActive: true,
+    })
+    .populate("warehouseId", "name code")
+    .sort({ variantName: 1 });
+    
     res.json({
       success: true,
-      data: product,
+      data: {
+        product,
+        variants,
+      },
     });
 
   } catch (error) {
@@ -202,10 +212,24 @@ exports.deleteProduct = async (req, res) => {
 
   try {
 
-    const product = await Product.findByIdAndDelete(
+    const product = await Product.findById(
       req.params.id
     );
-
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+    
+    await Variant.deleteMany({
+      productId: product._id,
+    });
+    
+    await Product.findByIdAndDelete(
+      product._id
+    );
     if (!product) {
 
       return res.status(404).json({

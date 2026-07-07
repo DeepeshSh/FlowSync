@@ -1,7 +1,5 @@
-
-
-
 import 'package:flutter/material.dart';
+
 import '../models/category_model.dart';
 import '../services/category_service.dart';
 
@@ -27,6 +25,18 @@ class _AddCategoriesScreenState extends State<AddCategoriesScreen> {
   bool isReturnable = false;
   bool isLoading = false;
 
+  // Pre-defined units matching your application's expected selection values
+  final List<String> availableUnits = [
+    "Piece (pcs)",
+    "Box",
+    "Packet",
+    "Meter",
+    "Feet",
+    "Kg",
+    "Liter",
+    "Set",
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -35,34 +45,51 @@ class _AddCategoriesScreenState extends State<AddCategoriesScreen> {
 
   Future<void> loadCategories() async {
     try {
-      categories = await categoryService.getCategories();
+      final data = await categoryService.getCategories();
       if (mounted) {
-        setState(() {});
+        setState(() {
+          categories = data;
+        });
       }
     } catch (e) {
       debugPrint(e.toString());
     }
   }
 
-  Future<void> addCategory() async {
+  InputDecoration fieldDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+      prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+      ),
+    );
+  }
+
+  Future<void> saveCategory() async {
     if (categoryNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Category name is required"),
-        ),
+        const SnackBar(content: Text("Category name is required.")),
       );
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       await categoryService.createCategory(
         name: categoryNameController.text.trim(),
         parentCategoryId: selectedParentCategory,
-        unit: selectedUnit ?? "",
+        unit: selectedUnit ?? '',
         isFragile: isFragile,
         isReturnable: isReturnable,
         notes: notesController.text.trim(),
@@ -70,795 +97,244 @@ class _AddCategoriesScreenState extends State<AddCategoriesScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Category Added Successfully"),
-          ),
+          const SnackBar(content: Text("Category created successfully!")),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
-    } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to create category: $e")),
+        );
       }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
   @override
+  void dispose() {
+    categoryNameController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    const Color textPrimary = Color(0xFF0F172A);
+    const Color textMuted = Color(0xFF64748B);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [ 
-              // HEADER
-             
-              SizedBox(
-                height: 140,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Back Button
-                    Positioned(
-                      top: 20,
-                      left: 20,
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 10,
-                             
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Continuous Theme Background Gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFE2EAF2),
+                    Color(0xFFF1F5F9),
+                    Colors.white,
+                  ],
+                  stops: [0.0, 0.25, 0.6],
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Clean Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 16, 10),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.maybePop(context),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: textPrimary,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              "Add Category",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: textPrimary,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              "Create new inventory classifications",
+                              style: TextStyle(color: textMuted, fontSize: 12.5),
                             ),
                           ],
                         ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Color(0xFF0B1245),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
                       ),
-                    ),
-
-                    // Title
-                    const Positioned(
-                      top: 34,
-                      left: 95,
-                      child: Text(
-                        "Add Category",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0B1245),
-                        ),
-                      ),
-                    ),
-
-                    // Store Image
-                    Positioned(
-                      top: 0,
-                      right: 10,
-                      child: Image.asset(
-                        "lib/assets/images/homeimage (2).png",
-                        height: 130,
-                      ),
-                    ),
-
-                    // Paper Plane
-                    Positioned(
-                      top: 35,
-                      right: -5,
-                      child: Image.asset(
-                        "lib/assets/images/paper_plane.png",
-                        width: 85,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // ===================================
-              // FORM SECTION
-              // ===================================
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    // =========================
-                    // CATEGORY NAME CARD
-                    // =========================
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Icon(
-                              Icons.sell_outlined,
-                              color: Color(0xFF2F80FF),
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                RichText(
-                                  text: const TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: "Category Name ",
-                                        style: TextStyle(
-                                          color: Color(0xFF0B1245),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: "*",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: categoryNameController,
-                                  decoration: InputDecoration(
-                                    hintText: "Enter category name",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 18,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    // =========================
-                    // PARENT CATEGORY CARD
-                    // =========================
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Icon(
-                              Icons.account_tree_outlined,
-                              color: Color(0xFF2F80FF),
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Parent Category",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF0B1245),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<String>(
-                                  value: selectedParentCategory,
-                                  decoration: InputDecoration(
-                                    hintText: "Select parent category",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 18,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: "",
-                                      child: Text("None"),
-                                    ),
-                                    ...categories.map(
-                                      (category) => DropdownMenuItem(
-                                        value: category.id,
-                                        child: Text(category.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedParentCategory = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    // =========================
-                    // UNIT CARD
-                    // =========================
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Icon(
-                              Icons.straighten,
-                              color: Color(0xFF2F80FF),
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Unit of Measurement",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF0B1245),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<String>(
-                                  value: selectedUnit,
-                                  decoration: InputDecoration(
-                                    hintText: "Select unit",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 18,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: "Piece (pcs)",
-                                      child: Text("Piece (pcs)"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Box",
-                                      child: Text("Box"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Packet",
-                                      child: Text("Packet"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Meter",
-                                      child: Text("Meter"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Feet",
-                                      child: Text("Feet"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Kg",
-                                      child: Text("Kg"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Liter",
-                                      child: Text("Liter"),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: "Set",
-                                      child: Text("Set"),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedUnit = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    // =========================
-                    // FRAGILE + RETURNABLE CARD
-                    // =========================
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // FRAGILE
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 58,
-                                  height: 58,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEAF2FF),
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: const Icon(
-                                    Icons.wine_bar_outlined,
-                                    color: Color(0xFF2F80FF),
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(width: 18),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Fragile Category",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "Handle with extra care",
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Switch(
-                                  value: isFragile,
-                                  activeColor: const Color(0xFF2F80FF),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isFragile = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(
-                            height: 1,
-                            color: Colors.grey.shade200,
-                          ),
-                          // RETURNABLE
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 58,
-                                  height: 58,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEAF2FF),
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: const Icon(
-                                    Icons.replay_circle_filled_outlined,
-                                    color: Color(0xFF2F80FF),
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(width: 18),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Returnable Category",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "Products can be returned",
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Switch(
-                                  value: isReturnable,
-                                  activeColor: const Color(0xFF2F80FF),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isReturnable = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    // =========================
-                    // NOTES CARD
-                    // =========================
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Icon(
-                              Icons.note_alt_outlined,
-                              color: Color(0xFF2F80FF),
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Notes",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF0B1245),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: notesController,
-                                  maxLines: 1,
-                                  decoration: InputDecoration(
-                                    hintText: "Enter notes (optional)",
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.all(18),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // =========================
-                    // SAVE BUTTON
-                    // =========================
-                    SizedBox(
-                      width: double.infinity,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : addCategory,
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Category Details",
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textPrimary),
                         ),
-                        child: Ink(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFF2F80FF),
-                                Color(0xFF5B9DFF),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(20),
-                            ),
-                          ),
-                          child: Container(
-                            alignment: Alignment.center,
-                            child: isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.save_outlined,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        "Save Category",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                        const SizedBox(height: 12),
+
+                        /// 1. Category Name Field
+                        TextField(
+                          controller: categoryNameController,
+                          style: const TextStyle(color: textPrimary, fontWeight: FontWeight.w500),
+                          decoration: fieldDecoration("Category Name *", Icons.folder_open_rounded),
                         ),
-                      ),
-                    ),
+                        const SizedBox(height: 16),
 
-                    const SizedBox(height: 30),
+                        /// 2. Parent Category Dropdown Selection
+                        DropdownButtonFormField<String>(
+                          value: categories.any((c) => c.id == selectedParentCategory) ? selectedParentCategory : null,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: textPrimary, fontWeight: FontWeight.w500),
+                          decoration: fieldDecoration("Parent Category", Icons.account_tree_outlined),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text("None (Primary)", style: TextStyle(color: textMuted)),
+                            ),
+                            ...categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                          ],
+                          onChanged: (val) => setState(() => selectedParentCategory = val),
+                        ),
+                        const SizedBox(height: 16),
 
-                    // =========================
-                    // FOOTER
-                    // =========================
-                    SizedBox(
-                      height: 90,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: ClipPath(
-                              clipper: WaveClipper(),
-                              child: Container(
-                                height: 55,
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFFDFF8EF),
-                                      Color(0xFFEAF7F3),
-                                      Color(0xFFD6F3EA),
-                                    ],
-                                  ),
-                                ),
+                        /// 3. Unit Dropdown Selection
+                        DropdownButtonFormField<String>(
+                          value: selectedUnit,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: textPrimary, fontWeight: FontWeight.w500),
+                          decoration: fieldDecoration("Unit of Measurement", Icons.square_foot_rounded),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text("Select Unit", style: TextStyle(color: textMuted)),
+                            ),
+                            ...availableUnits.map((u) => DropdownMenuItem(value: u, child: Text(u))),
+                          ],
+                          onChanged: (val) => setState(() => selectedUnit = val),
+                        ),
+                        const SizedBox(height: 20),
+
+                        const Text(
+                          "Compliance Settings",
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textPrimary),
+                        ),
+                        const SizedBox(height: 8),
+
+                        /// 4. Options Selectors (Fragile & Returnable Switches for a cleaner feel)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            children: [
+                              SwitchListTile(
+                                value: isFragile,
+                                title: const Text("Fragile Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textPrimary)),
+                                subtitle: const Text("Requires specialized cargo handling parameters", style: TextStyle(fontSize: 12)),
+                                activeColor: const Color(0xFF3B82F6),
+                                onChanged: (val) => setState(() => isFragile = val),
                               ),
-                            ),
+                              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                              SwitchListTile(
+                                value: isReturnable,
+                                title: const Text("Returnable Category", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textPrimary)),
+                                subtitle: const Text("Permits items under this line to process returns", style: TextStyle(fontSize: 12)),
+                                activeColor: const Color(0xFF3B82F6),
+                                onChanged: (val) => setState(() => isReturnable = val),
+                              ),
+                            ],
                           ),
-                          Positioned(
-  left: 0,
-  right: 0,
-  bottom: 0,
+                        ),
+                        const SizedBox(height: 20),
 
-  child: ClipPath(
-    clipper: WaveClipper(),
+                        const Text(
+                          "Additional Remarks",
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textPrimary),
+                        ),
+                        const SizedBox(height: 12),
 
-    child: Container(
-      height: 60,
-      decoration: const BoxDecoration(
-  gradient: LinearGradient(
-    colors: [
-      Color(0xFFDFF8EF),
-      Color(0xFFEAF7F3),
-      Color(0xFFD6F3EA),
-    ],
-  ),
-),
-    ),
-  ),
-),
-
- Positioned(
-        left: -5,
-        bottom: 0,
-
-        child: Image.asset(
-          "lib/assets/images/grass-removebg-preview.png",
-          height: 80,
-        ),
-      ),
-
-      // RIGHT GEARS
-
-      Positioned(
-        right: 5,
-        bottom: -30,
-
-        child: Image.asset(
-          "lib/assets/images/gears-removebg-preview.png",
-          height: 150,
-        ),
-      ),
-
-                        ],
-                      ),
+                        /// 5. Notes Field
+                        TextField(
+                          controller: notesController,
+                          maxLines: null,
+                          style: const TextStyle(color: textPrimary),
+                          decoration: fieldDecoration("Notes", Icons.description_outlined),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                  ],
+                  ),
                 ),
-              ),
-            ], // <-- CLOSED: main Column children list
+
+                // Absolute Placed Actions Footer Panel
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: const Color(0xFFE2E8F0))),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : saveCategory,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : const Text(
+                              "Save Category",
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
-
-// =========================
-// WAVE CLIPPER
-// =========================
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(0, 25);
-    path.quadraticBezierTo(
-      size.width * 0.15,
-      0,
-      size.width * 0.30,
-      20,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.45,
-      40,
-      size.width * 0.60,
-      15,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.75,
-      -5,
-      size.width,
-      25,
-    );
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
-  }
-}
-

@@ -18,6 +18,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   
   String selectedTab = "All"; 
   final List<String> filterTabs = ["All", "Pending", "Paid"];
+  DateTimeRange? selectedDateRange;
 
   @override
   void initState() {
@@ -29,7 +30,6 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     try {
       final data = await PurchaseService().getPurchases();
       if (!mounted) return;
-      
       setState(() {
         purchases = data;
         filteredPurchases = data;
@@ -46,6 +46,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   Future<void> refreshPurchases() async {
     try {
       final data = await PurchaseService().getPurchases();
+      if (!mounted) return;
       purchases = data;
       filterPurchases();
     } catch (_) {}
@@ -55,18 +56,27 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     List<Purchase> temp = List.from(purchases);
 
     if (searchController.text.isNotEmpty) {
+      final query = searchController.text.toLowerCase();
       temp = temp.where((purchase) {
-        final supplier = purchase.supplierName;
-        final poNumber = purchase.purchaseNumber;
-        return supplier.toLowerCase().contains(searchController.text.toLowerCase()) ||
-            poNumber.toLowerCase().contains(searchController.text.toLowerCase());
+        final supplier = purchase.supplierName.toLowerCase();
+        final poNumber = purchase.purchaseNumber.toLowerCase();
+        return supplier.contains(query) || poNumber.contains(query);
       }).toList();
     }
 
     if (selectedTab != "All") {
+      final tabLower = selectedTab.toLowerCase();
       temp = temp.where((purchase) {
-        final status = purchase.paymentStatus;
-        return status.toLowerCase() == selectedTab.toLowerCase();
+        return purchase.paymentStatus.toLowerCase() == tabLower;
+      }).toList();
+    }
+
+    if (selectedDateRange != null) {
+      final startDate = selectedDateRange!.start.subtract(const Duration(days: 1));
+      final endDate = selectedDateRange!.end.add(const Duration(days: 1));
+      temp = temp.where((purchase) {
+        return purchase.purchaseDate.isAfter(startDate) &&
+            purchase.purchaseDate.isBefore(endDate);
       }).toList();
     }
 
@@ -82,391 +92,424 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     return purchases.fold(0.0, (sum, purchase) => sum + purchase.totalAmount);
   }
 
-  int get pendingCount {
-    return purchases.where((purchase) => purchase.paymentStatus.toLowerCase() == "pending").length;
-  }
-
-  int get uniqueSuppliersCount {
-    return purchases.map((p) => p.supplierName).toSet().length;
+  double get pendingValue {
+    return purchases
+        .where((purchase) => purchase.paymentStatus.toLowerCase() == "pending")
+        .fold(0.0, (sum, purchase) => sum + purchase.totalAmount);
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
+        backgroundColor: Color(0xFFE5ECF4), // Matches the header background
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2F6BFA)),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00B287)),
           ),
         ),
       );
     }
 
-    const Color bgScaffold = Color(0xFFF8FAFC);
-    const Color textPrimary = Color(0xFF0F172A);
-    const Color textMuted = Color(0xFF64748B);
-    const Color brandBlue = Color(0xFF2F6BFA);
-
     return Scaffold(
-      backgroundColor: bgScaffold,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              
-              // ================= HEADER SECTION WITH TOP-RIGHT ILLUSTRATION (Matches image_771d5f.png) =================
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Purchases",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: textPrimary,
-                              letterSpacing: -0.5,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE5ECF4), Color(0xFFF1F5F9), Color(0xFFFFFFFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.0, 0.35, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ================= HEADER SECTION =================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.maybePop(context),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              "Purchases",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
+                            SizedBox(height: 6),
+                            Text(
+                              "Manage all your purchase orders across all networks",
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 12,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Image.asset(
+                        'lib/assets/images/purchase_screen_header.png',
+                        height: 80, // Taller size to match the inventory screen layout
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox(width: 80, height: 80),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ================= STAT CARDS GRID =================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buildStatCard(
+                            "Purchase Count",
+                            totalPurchases.toString(),
+                            Icons.receipt_long_rounded,
+                            const Color(0xFF3B82F6),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            "Track purchases &\nsupplier payments",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textMuted,
-                              height: 1.3,
-                            ),
+                          const SizedBox(width: 14),
+                          _buildStatCard(
+                            "Total Outflow",
+                            "₹${totalStockValue.toStringAsFixed(0)}",
+                            Icons.currency_rupee_rounded,
+                            const Color(0xFF10B981),
                           ),
                         ],
                       ),
-                    ),
-                    // Header Image container positioned on the right
-                    Container(
-                      height: 200,
-                      width: 240,
-                      margin: const EdgeInsets.only(top: 4),
-                      child: Image.asset(
-                        'lib/assets/images/purchase_screen_header.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      const SizedBox(height: 14),
+                      _buildFullWidthStatCard(
+                        "Pending Outflow",
+                        "₹${pendingValue.toStringAsFixed(0)}",
+                        Icons.account_balance_wallet_rounded,
+                        const Color(0xFFF59E0B),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
 
-              // ================= 2x2 COMPACT GRID INFO BOXES =================
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.8, 
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  children: [
-                    _buildGridStatsCard(
-                      value: totalPurchases.toString(),
-                      label: "Total Orders",
-                      icon: Icons.receipt_long_outlined,
-                      iconBg: const Color(0xFFEEF2FF),
-                      iconColor: brandBlue,
-                    ),
-                    _buildGridStatsCard(
-                      value: "₹${(totalStockValue / 100000).toStringAsFixed(1)}L",
-                      label: "Total Outflow",
-                      icon: Icons.currency_rupee_rounded,
-                      iconBg: const Color(0xFFECFDF5),
-                      iconColor: const Color(0xFF10B981),
-                    ),
-                    _buildGridStatsCard(
-                      value: pendingCount.toString(),
-                      label: "Pending Bills",
-                      icon: Icons.warning_amber_rounded,
-                      iconBg: const Color(0xFFFFF7ED),
-                      iconColor: const Color(0xFFF97316),
-                    ),
-                    _buildGridStatsCard(
-                      value: uniqueSuppliersCount.toString(),
-                      label: "Suppliers",
-                      icon: Icons.storefront_outlined,
-                      iconBg: const Color(0xFFF5F3FF),
-                      iconColor: const Color(0xFF8B5CF6),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // ================= SEARCH & FILTER LINE =================
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: (value) => filterPurchases(),
-                          decoration: const InputDecoration(
-                            hintText: "Search orders, suppliers...",
-                            hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                            prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: const Icon(Icons.filter_list, color: brandBlue, size: 20),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ================= HORIZONTAL STATUS CHIPS ROW =================
-              SizedBox(
-                height: 38,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
+                // ================= SEARCH FIELD =================
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: filterTabs.length,
-                  itemBuilder: (context, index) {
-                    final tabName = filterTabs[index];
-                    final bool isSelected = selectedTab == tabName;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedTab = tabName;
-                          filterPurchases();
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: isSelected ? brandBlue : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected ? brandBlue : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            tabName,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF475569),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              fontSize: 13,
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x05000000),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (value) => filterPurchases(),
+                      decoration: const InputDecoration(
+                        hintText: "Search purchase history...",
+                        hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                        prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8), size: 22),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 15),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // ================= FILTERS ROW =================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              initialDateRange: selectedDateRange,
+                            );
+                            if (picked != null) {
+                              selectedDateRange = picked;
+                              filterPurchases();
+                            }
+                          },
+                          child: Container(
+                            height: 46,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF3B82F6)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  selectedDateRange == null
+                                      ? "Date Range"
+                                      : "${selectedDateRange!.start.day}/${selectedDateRange!.start.month} - ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}",
+                                  style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // ================= CARDS LIST (Actionless / Product Count Added) =================
-              filteredPurchases.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Text("No Orders Found", style: TextStyle(color: textMuted)),
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
-                      itemCount: filteredPurchases.length,
-                      itemBuilder: (context, index) {
-                        final purchase = filteredPurchases[index];
-                        final String supplierName = purchase.supplierName;
-                        final String poNumber = purchase.purchaseNumber;
-                        final double amount = purchase.totalAmount;
-                        final String displayStatus = purchase.paymentStatus;
-                        final bool isPaid = displayStatus.toLowerCase() == "paid";
-
-                        int productCount = 0;
-                        try {
-                          productCount = (purchase as dynamic).items.length;
-                        } catch (_) {
-                          productCount = 1; 
-                        }
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(16),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 46,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(12),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedTab,
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                              style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500),
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  selectedTab = newValue;
+                                  filterPurchases();
+                                }
+                              },
+                              items: filterTabs.map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value == "All" ? "All Statuses" : value),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ================= LIST HEADER TITLE =================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        "Recent Transactions",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      Text(
+                        "View All",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00B287),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ================= ORDER LIST ITEMS =================
+                filteredPurchases.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Text("No Purchase Orders Found", style: TextStyle(color: Color(0xFF64748B))),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
+                        itemCount: filteredPurchases.length,
+                        itemBuilder: (context, index) {
+                          final purchase = filteredPurchases[index];
+                          final bool isPending = purchase.paymentStatus.toLowerCase() == "pending";
+
+                          int productCount = 1;
+                          try {
+                            productCount = (purchase as dynamic).items.length;
+                          } catch (_) {}
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x03000000),
+                                  spreadRadius: 1,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.description_outlined, color: Color(0xFF64748B), size: 20),
                                     ),
-                                    child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF94A3B8), size: 24),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          supplierName.toUpperCase(),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: textPrimary,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            purchase.supplierName.toUpperCase(),
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEFF6FF),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              purchase.purchaseNumber,
+                                              style: const TextStyle(
+                                                color: Color(0xFF3B82F6),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            "Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
+                                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        const Text("Payment", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                                         const SizedBox(height: 4),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFEFF6FF),
-                                            borderRadius: BorderRadius.circular(4),
+                                            color: isPending ? const Color(0xFFFFF7ED) : const Color(0xFFECFDF5),
+                                            borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            "PO: $poNumber",
-                                            style: const TextStyle(
-                                              color: brandBlue,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
+                                            isPending ? "Pending" : "Paid",
+                                            style: TextStyle(
+                                              color: isPending ? const Color(0xFFEA580C) : const Color(0xFF10B981),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
-                                          style: const TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w500),
-                                        ),
                                       ],
-                                    ),
-                                  ),
-                                  
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text("Payment", style: TextStyle(color: textMuted, fontSize: 11)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        displayStatus.toUpperCase(),
-                                        style: TextStyle(
-                                          color: isPaid ? const Color(0xFF10B981) : const Color(0xFFF97316),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          isPaid ? "Settled" : "Pending",
-                                          style: TextStyle(
-                                            color: isPaid ? const Color(0xFF10B981) : const Color(0xFFF97316),
-                                            fontSize: 10,
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text("Purchase Amount", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          "₹${purchase.totalAmount.toStringAsFixed(2)}",
+                                          style: const TextStyle(
+                                            color: Color(0xFF00B287),
                                             fontWeight: FontWeight.bold,
+                                            fontSize: 16,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Purchase Amount", style: TextStyle(color: textMuted, fontSize: 11)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        "₹${amount.toStringAsFixed(2)}",
-                                        style: const TextStyle(
-                                          color: Color(0xFF10B981),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.inventory_2_outlined, size: 14, color: brandBlue),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "$productCount Products",
-                                          style: const TextStyle(color: textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
-                                        ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-          ],
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.shopping_bag_outlined, size: 14, color: Color(0xFF64748B)),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "$productCount Products",
+                                            style: const TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.w500),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
+          ),
         ),
       ),
-      ),
-      
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.push(
@@ -475,67 +518,94 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           );
           await refreshPurchases();
         },
-        backgroundColor: brandBlue,
+        backgroundColor: const Color(0xFF2563EB),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         icon: const Icon(Icons.add, color: Colors.white, size: 20),
         label: const Text(
-          "Add Order",
+          "New Purchase",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ),
     );
   }
 
-  Widget _buildGridStatsCard({
-    required String value,
-    required String label,
-    required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
-  }) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color tint) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border:  Border.all(color: Color(0x99E2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: tint.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: tint, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullWidthStatCard(String title, String value, IconData icon, Color tint) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border:  Border.all(color: Color(0x99E2E8F0)),
       ),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
+              color: tint.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Icon(icon, color: tint, size: 20),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ],
           ),
         ],
       ),

@@ -8,6 +8,12 @@ const supplierSchema = new mongoose.Schema(
       trim: true,
     },
 
+    companyName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     contactPerson: {
       type: String,
       default: "",

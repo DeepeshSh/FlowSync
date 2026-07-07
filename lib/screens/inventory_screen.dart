@@ -4,6 +4,7 @@ import 'add_product_screen.dart';
 import '../services/product_service.dart';
 import '../models/product_model.dart';
 import 'edit_product_screen.dart';
+
 // ==========================================================================
 // DB/API DATA CONTRACT OBJECT MODE CONFIGURATIONS
 // ==========================================================================
@@ -129,83 +130,45 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
- Future<void> _fetchLiveBackendData() async {
-
-  if (!mounted) return;
-
-  setState(() => _isLoading = true);
-
-  try {
-
-    final List<Product> products =
-        await _productService.getProducts();
-
+  Future<void> _fetchLiveBackendData() async {
     if (!mounted) return;
+    setState(() => _isLoading = true);
 
-    setState(() {
+    try {
+      final List<Product> products = await _productService.getProducts();
+      if (!mounted) return;
 
-      _items = products.map((product) {
-
-        return InventoryItem(
-
-          id: product.id,
-
-          name: product.name,
-
-          sku: product.sku,
-
-          category: product.categoryName,
-
-          brand: product.brandName,
-
-          rack: product.storageLocation,
-
-          imageUrl: product.imageUrl,
-
-          buyPrice: product.purchasePrice,
-
-          sellPrice: product.sellingPrice,
-
-          variants: [
-
-            ProductVariant(
-
-              id: "default",
-
-              name: "Standard",
-
-              stock: product.stock,
-
-            ),
-
-          ],
-
-        );
-
-      }).toList();
-
-      _isLoading = false;
-
-    });
-
-  } catch (e) {
-
-    if (!mounted) return;
-
-    setState(() => _isLoading = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-
-      SnackBar(
-
-        content: Text("Error: $e"),
-
-      ),
-
-    );
-
+      setState(() {
+        _items = products.map((product) {
+          return InventoryItem(
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            category: product.categoryName,
+            brand: product.brandName,
+            rack: product.storageLocation,
+            imageUrl: product.imageUrl,
+            buyPrice: product.purchasePrice,
+            sellPrice: product.sellingPrice,
+            variants: [
+              ProductVariant(
+                id: "default",
+                name: "Standard",
+                stock: product.stock,
+              ),
+            ],
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
   }
-}
 
   int get totalProducts => _items.length;
   double get totalStockValue => _items.fold(0.0, (sum, item) => sum + (item.totalStock * item.sellPrice));
@@ -215,27 +178,66 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
-            : RefreshIndicator(
-                onRefresh: _fetchLiveBackendData,
-                color: const Color(0xFF2563EB),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeaderSection(),
-                      _buildSummaryCard2x2Grid(),
-                      _buildFilterRowSection(),
-                      _buildDynamicProductList(),
-                      const SizedBox(height: 120), 
-                    ],
-                  ),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // 1. Premium Fading Layout Background Gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFE2EAF2), // Rich premium slate tint at top
+                    Color(0xFFF1F5F9), // Fades down smoothly
+                    Colors.white,      // Pure clean asset focal baseline
+                  ],
+                  stops: [0.0, 0.35, 0.7],
                 ),
               ),
+            ),
+          ),
+
+          // 2. Ambient Flow Accents (To make screen look premium across other areas)
+          Positioned(
+            right: -60,
+            top: 360,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Color(0x0C3B82F6), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Main Screen Interactive Frame
+          _isLoading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
+              : SafeArea(
+                  child: RefreshIndicator(
+                    onRefresh: _fetchLiveBackendData,
+                    color: const Color(0xFF2563EB),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeaderSection(),
+                          _buildSummaryCard2x2Grid(),
+                          _buildFilterRowSection(),
+                          _buildDynamicProductList(),
+                          const SizedBox(height: 120), 
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -260,84 +262,129 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildHeaderSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 10.0),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Image.asset(
-              'lib/assets/images/inventory_header.png',
-              width: 165,
-              height: 145,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => Container(
-                width: 150,
-                height: 130,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(Icons.warehouse_outlined, size: 54, color: Color(0xFF2563EB)),
-              ),
+  return Padding(
+    // Controlled padding around the header area
+    padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+    child: Row(
+      // Vertically centers all three components perfectly inline with each other
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 1. Perfectly Aligned Back Button Arrow
+        GestureDetector(
+          onTap: () => Navigator.maybePop(context),
+          child: const Padding(
+            padding: EdgeInsets.all(4.0), // Expands touch target without shifting position
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF0F172A),
+              size: 20,
             ),
           ),
-          Column(
+        ),
+        const SizedBox(width: 16),
+
+        // 2. Core Typography Content Block
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                onTap: () => Navigator.maybePop(context),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  height: 40,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.arrow_back, color: Color(0xFF0F172A), size: 18),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Inventory',
+            children: const [
+              Text(
+                "Inventory",
                 style: TextStyle(
-                  fontSize: 32, 
-                  fontWeight: FontWeight.bold, 
-                  color: Color(0xFF0F172A), 
-                  letterSpacing: -0.8,
+                  fontSize: 24, // Slightly balanced down from 26 to match vertical symmetry
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 6),
-              const SizedBox(
-                width: 180, 
-                child: Text(
-                  'Manage products & stock across all warehouses',
-                  style: TextStyle(
-                    color: Color(0xFF64748B), 
-                    height: 1.3, 
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                  ),
+              SizedBox(height: 4),
+              Text(
+                "Manage products & stock across all warehouses",
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12.5,
+                  height: 1.3,
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 8),
 
+        // 3. Parallel Image & Background Container
+        SizedBox(
+          width: 120, 
+          height: 95, 
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Main Abstract Organic Soft Blue Shape Backdrop
+              Positioned(
+                right: -5,
+                top: 8,
+                child: Container(
+                  width: 105, 
+                  height: 85, 
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE).withOpacity(0.75), 
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                      topRight: Radius.circular(40),
+                      bottomLeft: Radius.circular(45),
+                      bottomRight: Radius.circular(55),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Secondary background accent blob
+              Positioned(
+                right: 45,
+                top: 0,
+                child: Container(
+                  width: 38, 
+                  height: 34, 
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF).withOpacity(0.7),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+
+              // Main Illustration Image Asset Layer
+              Positioned(
+                bottom: 0,
+                right: -5,
+                child: Image.asset(
+                  "lib/assets/images/inventory_header.png",
+                  width: 110,  
+                  height: 90, 
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) {
+                    return Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.warehouse_outlined,
+                        size: 36,
+                        color: Color(0xFF0F172A),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildSummaryCard2x2Grid() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -586,35 +633,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ],
                   ),
                   InkWell(
-  onTap: () async {
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ManageVariantsScreen(
-          product: Product(
-            id: item.id,
-            name: item.name,
-            sku: item.sku,
-            brandName: item.brand,
-            unit: "Piece",
-            storageLocation: item.rack,
-            stock: item.totalStock,
-            lowStockThreshold: 5,
-            purchasePrice: item.buyPrice,
-            sellingPrice: item.sellPrice,
-            categoryName: item.category,
-            imageUrl: item.imageUrl,
-          ),
-        ),
-      ),
-    );
-
-    if (result == true) {
-      _fetchLiveBackendData();
-    }
-
-  },
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ManageVariantsScreen(
+                            product: Product(
+                              id: item.id,
+                              name: item.name,
+                              sku: item.sku,
+                              brandName: item.brand,
+                              unit: "Piece",
+                              storageLocation: item.rack,
+                              stock: item.totalStock,
+                              lowStockThreshold: 5,
+                              purchasePrice: item.buyPrice,
+                              sellingPrice: item.sellPrice,
+                              categoryName: item.category,
+                              imageUrl: item.imageUrl,
+                            ),
+                          ),
+                        ),
+                      );
+                      if (result == true) {
+                        _fetchLiveBackendData();
+                      }
+                    },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -642,57 +686,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                       icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF64748B)),
                       label: const Text('Edit', style: TextStyle(color: Color(0xFF475569), fontSize: 13, fontWeight: FontWeight.w600)),
-                     onPressed: () async {
-
-  final result = await Navigator.push(
-
-    context,
-
-    MaterialPageRoute(
-
-      builder: (_) => EditProductScreen(
-
-        product: Product(
-
-          id: item.id,
-
-          name: item.name,
-
-          sku: item.sku,
-
-          brandName: item.brand,
-
-          unit: "Piece",
-
-          storageLocation: item.rack,
-
-          stock: item.totalStock,
-
-          lowStockThreshold: 5,
-
-          purchasePrice: item.buyPrice,
-
-          sellingPrice: item.sellPrice,
-
-          categoryName: item.category,
-
-          imageUrl: item.imageUrl,
-
-        ),
-
-      ),
-
-    ),
-
-  );
-
-  if (result == true) {
-
-    _fetchLiveBackendData();
-
-  }
-
-},
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditProductScreen(
+                              product: Product(
+                                id: item.id,
+                                name: item.name,
+                                sku: item.sku,
+                                brandName: item.brand,
+                                unit: "Piece",
+                                storageLocation: item.rack,
+                                stock: item.totalStock,
+                                lowStockThreshold: 5,
+                                purchasePrice: item.buyPrice,
+                                sellingPrice: item.sellPrice,
+                                categoryName: item.category,
+                                imageUrl: item.imageUrl,
+                              ),
+                            ),
+                          ),
+                        );
+                        if (result == true) {
+                          _fetchLiveBackendData();
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -728,6 +747,4 @@ class _InventoryScreenState extends State<InventoryScreen> {
       },
     );
   }
-
-  
 }

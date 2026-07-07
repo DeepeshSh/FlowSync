@@ -97,29 +97,74 @@ class ProductService {
     required String name,
     required String sku,
     required String brandName,
+    required String category,
+    required String warehouseId,
     required String storageLocation,
     required String unit,
     required int stock,
     required int lowStockThreshold,
     required double purchasePrice,
     required double sellingPrice,
+    required String hsnCode,
+    required String barcode,
+    required String description,
+    required double length,
+    required double width,
+    required double height,
+    required String dimensionUnit,
+    required bool fragile,
+    required double gstPercentage,
+    required double mrp,
+    required String supplierName,
+    required double amountPaid,
+    required double outstandingBalance,
+    required String purchaseDate,
     required String imageUrl,
   }) async {
-    await dio.put(
-      "${ApiConfig.baseUrl}/products/$id",
-      data: {
-        "name": name,
-        "sku": sku,
-        "brandName": brandName,
-        "storageLocation": storageLocation,
-        "unit": unit,
-        "stock": stock,
-        "lowStockThreshold": lowStockThreshold,
-        "purchasePrice": purchasePrice,
-        "sellingPrice": sellingPrice,
-        "imageUrl": imageUrl,
-      },
-    );
+    try {
+      final response = await dio.put(
+        "${ApiConfig.baseUrl}/products/$id",
+        data: {
+          "name": name,
+          "sku": sku,
+          "brandName": brandName,
+          "category": category,
+          "warehouseId": warehouseId,
+          "storageLocation": storageLocation,
+          "unit": unit,
+          "stock": stock,
+          "lowStockThreshold": lowStockThreshold,
+          "purchasePrice": purchasePrice,
+          "sellingPrice": sellingPrice,
+          "hsnCode": hsnCode,
+          "barcode": barcode,
+          "description": description,
+          "dimensions": {
+            "length": length,
+            "width": width,
+            "height": height,
+            "unit": dimensionUnit,
+          },
+          "fragile": fragile,
+          "gstPercentage": gstPercentage,
+          "mrp": mrp,
+          "supplierName": supplierName,
+          "amountPaid": amountPaid,
+          "outstandingBalance": outstandingBalance,
+          "purchaseDate": purchaseDate,
+          "imageUrl": imageUrl,
+          "isActive": true,
+          "hasVariants": false,
+        },
+      );
+
+      print("UPDATE STATUS : ${response.statusCode}");
+      print("UPDATE BODY : ${response.data}");
+    } on DioException catch (e) {
+      print("UPDATE STATUS : ${e.response?.statusCode}");
+      print("UPDATE ERROR : ${e.response?.data}");
+      rethrow;
+    }
   }
 
   // UPDATE PRODUCT STOCK (PATCH)

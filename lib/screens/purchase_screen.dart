@@ -17,13 +17,109 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   final searchController = TextEditingController();
   
   String selectedTab = "All"; 
-  final List<String> filterTabs = ["All", "Pending", "Paid"];
+  final List<String> filterTabs = ["All", "Paid", "Pending", "Draft"];
   DateTimeRange? selectedDateRange;
 
   @override
   void initState() {
     super.initState();
     loadPurchases();
+  }
+
+  // Deep extraction function to safely fetch the amount fields directly from the original payload keys
+  double _getSafeAmount(Purchase purchase) {
+    try {
+      final dynamic raw = purchase;
+      Map<dynamic, dynamic>? rawMap;
+
+      // Try to extract raw Map representation via serialization methods if available
+      if (raw is Map) {
+        rawMap = raw;
+      } else {
+        try {
+          rawMap = raw.toJson() as Map<dynamic, dynamic>;
+        } catch (_) {
+          try {
+            rawMap = raw.toMap() as Map<dynamic, dynamic>;
+          } catch (_) {}
+        }
+      }
+
+      if (rawMap != null) {
+        // Priority checking keys matching AddPurchaseScreen submission payload
+        final keysToTry = ['grandTotal', 'grand_total', 'totalAmount', 'total_amount', 'subtotal', 'amount'];
+        for (final key in keysToTry) {
+          if (rawMap[key] != null) {
+            final parsedValue = double.tryParse(rawMap[key].toString());
+            if (parsedValue != null && parsedValue > 0) {
+              return parsedValue;
+            }
+          }
+        }
+      }
+      
+      // Property level reflection probing
+      try {
+        if (raw.grandTotal != null) return double.tryParse(raw.grandTotal.toString()) ?? 0.0;
+      } catch (_) {}
+      try {
+        if (raw.totalAmount != null) return double.tryParse(raw.totalAmount.toString()) ?? 0.0;
+      } catch (_) {}
+      
+      // Final fallback to model property
+      return double.tryParse(purchase.totalAmount.toString()) ?? 0.0;
+    } catch (_) {
+      return 0.0;
+    }
+  }
+
+  // Deep extraction function to normalize status into three explicit categories: Paid, Pending, Draft
+  String _getSafeStatus(Purchase purchase) {
+    try {
+      final dynamic raw = purchase;
+      String extractedStatus = "";
+      Map<dynamic, dynamic>? rawMap;
+
+      if (raw is Map) {
+        rawMap = raw;
+      } else {
+        try {
+          rawMap = raw.toJson() as Map<dynamic, dynamic>;
+        } catch (_) {
+          try {
+            rawMap = raw.toMap() as Map<dynamic, dynamic>;
+          } catch (_) {}
+        }
+      }
+
+      if (rawMap != null) {
+        if (rawMap['status'] != null) extractedStatus = rawMap['status'].toString();
+        if (extractedStatus.isEmpty && rawMap['paymentStatus'] != null) extractedStatus = rawMap['paymentStatus'].toString();
+        if (extractedStatus.isEmpty && rawMap['payment_status'] != null) extractedStatus = rawMap['payment_status'].toString();
+      }
+
+      if (extractedStatus.isEmpty) {
+        try {
+          if (raw.status != null) extractedStatus = raw.status.toString();
+        } catch (_) {}
+        try {
+          if (raw.paymentStatus != null) extractedStatus = raw.paymentStatus.toString();
+        } catch (_) {}
+      }
+      
+      if (extractedStatus.isEmpty) {
+        extractedStatus = purchase.paymentStatus;
+      }
+
+      // Categorize cleanly into Paid, Pending, or Draft
+      final clean = extractedStatus.trim().toLowerCase();
+      if (clean.contains("paid")) return "Paid";
+      if (clean.contains("draft")) return "Draft";
+      
+      return "Pending";
+    } catch (_) {
+      return "Pending";
+    }
   }
 
   Future<void> loadPurchases() async {
@@ -65,9 +161,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
 
     if (selectedTab != "All") {
-      final tabLower = selectedTab.toLowerCase();
       temp = temp.where((purchase) {
-        return purchase.paymentStatus.toLowerCase() == tabLower;
+        return _getSafeStatus(purchase).toLowerCase() == selectedTab.toLowerCase();
       }).toList();
     }
 
@@ -89,20 +184,23 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   int get totalPurchases => purchases.length;
 
   double get totalStockValue {
-    return purchases.fold(0.0, (sum, purchase) => sum + purchase.totalAmount);
+    return purchases.fold(0.0, (sum, purchase) => sum + _getSafeAmount(purchase));
   }
 
   double get pendingValue {
     return purchases
-        .where((purchase) => purchase.paymentStatus.toLowerCase() == "pending")
-        .fold(0.0, (sum, purchase) => sum + purchase.totalAmount);
+        .where((purchase) {
+          final status = _getSafeStatus(purchase).toLowerCase();
+          return status == "pending" || status == "draft";
+        })
+        .fold(0.0, (sum, purchase) => sum + _getSafeAmount(purchase));
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFE5ECF4), // Matches the header background
+        backgroundColor: Color(0xFFE5ECF4),
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00B287)),
@@ -149,10 +247,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                             Text(
                               "Purchases",
                               style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A)),
                             ),
                             SizedBox(height: 6),
                             Text(
@@ -169,7 +266,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       const SizedBox(width: 16),
                       Image.asset(
                         'lib/assets/images/purchase_screen_header.png',
-                        height: 80, // Taller size to match the inventory screen layout
+                        height: 80,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) => const SizedBox(width: 80, height: 80),
                       ),
@@ -363,7 +460,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         itemCount: filteredPurchases.length,
                         itemBuilder: (context, index) {
                           final purchase = filteredPurchases[index];
-                          final bool isPending = purchase.paymentStatus.toLowerCase() == "pending";
+                          final String orderStatus = _getSafeStatus(purchase);
+                          final double calculatedAmount = _getSafeAmount(purchase);
 
                           int productCount = 1;
                           try {
@@ -446,13 +544,21 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: isPending ? const Color(0xFFFFF7ED) : const Color(0xFFECFDF5),
+                                            color: orderStatus.toLowerCase() == "paid"
+                                                ? const Color(0xFFECFDF5)
+                                                : orderStatus.toLowerCase() == "draft"
+                                                    ? const Color(0xFFEFF6FF)
+                                                    : const Color(0xFFFFF7ED),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            isPending ? "Pending" : "Paid",
+                                            orderStatus,
                                             style: TextStyle(
-                                              color: isPending ? const Color(0xFFEA580C) : const Color(0xFF10B981),
+                                              color: orderStatus.toLowerCase() == "paid"
+                                                  ? const Color(0xFF10B981)
+                                                  : orderStatus.toLowerCase() == "draft"
+                                                      ? const Color(0xFF3B82F6)
+                                                      : const Color(0xFFEA580C),
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -472,7 +578,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                         const Text("Purchase Amount", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                                         const SizedBox(height: 2),
                                         Text(
-                                          "₹${purchase.totalAmount.toStringAsFixed(2)}",
+                                          "₹${calculatedAmount.toStringAsFixed(2)}",
                                           style: const TextStyle(
                                             color: Color(0xFF00B287),
                                             fontWeight: FontWeight.bold,

@@ -9,7 +9,6 @@ const purchaseSchema = new mongoose.Schema(
     },
 
     // Supplier Details
-
     supplierId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Supplier",
@@ -36,7 +35,6 @@ const purchaseSchema = new mongoose.Schema(
     },
 
     // Dates
-
     purchaseDate: {
       type: Date,
       default: Date.now,
@@ -47,7 +45,6 @@ const purchaseSchema = new mongoose.Schema(
     },
 
     // Products
-
     items: [
       {
         productId: {
@@ -63,6 +60,11 @@ const purchaseSchema = new mongoose.Schema(
         sku: {
           type: String,
           default: "",
+        },
+
+        unit: {
+          type: String,
+          default: "Pcs",
         },
 
         quantity: {
@@ -82,18 +84,22 @@ const purchaseSchema = new mongoose.Schema(
           required: true,
           default: 0,
         },
+
+        // FIXED: Added notes field support to nested purchase order lines
+        notes: {
+          type: String,
+          default: "",
+        },
       },
     ],
 
-    // Notes
-
+    // Global Order Notes
     notes: {
       type: String,
       default: "",
     },
 
-    // Summary
-
+    // Summary Financials
     subtotal: {
       type: Number,
       default: 0,
@@ -130,38 +136,22 @@ const purchaseSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // Status
-
+    // Status Matrices
     paymentStatus: {
       type: String,
-
-      enum: [
-        "Pending",
-        "Partial",
-        "Paid",
-      ],
-
+      enum: ["Pending", "Partial", "Paid"],
       default: "Pending",
     },
 
     status: {
       type: String,
-
-      enum: [
-        "Draft",
-        "Confirmed",
-      ],
-
+      enum: ["Draft", "Pending", "Confirmed"], // Added 'Pending' if currentStatus switches to it on UI
       default: "Draft",
     },
   },
-
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model(
-  "Purchase",
-  purchaseSchema
-);
+module.exports = mongoose.model("Purchase", purchaseSchema);

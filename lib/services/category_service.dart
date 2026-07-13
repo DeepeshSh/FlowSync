@@ -22,7 +22,7 @@ class CategoryService {
     required String notes,
   }) async {
     await dio.post(
-      "$baseUrl/api/categories",
+      baseUrl, // Fixed the endpoint path mismatch
       data: {
         "name": name,
         "parentCategoryId": parentCategoryId,
@@ -35,9 +35,10 @@ class CategoryService {
   }
 
   /// Updates an existing category profile configuration parameters via PUT request
+ /// Updates an existing category profile configuration parameters via PUT request
   Future<void> updateCategory(Category category) async {
     await dio.put(
-      "$baseUrl/api/categories/${category.id}",
+      "$baseUrl/${category.id}", // Path maps to: /api/categories/:id
       data: {
         "name": category.name,
         "parentCategoryId": category.parentCategoryId,
@@ -51,7 +52,7 @@ class CategoryService {
 
   Future<void> deleteCategory(String id) async {
     await dio.delete(
-      "$baseUrl/api/categories/$id",
+      "$baseUrl/$id", // Fixed endpoint path mismatch consistency
     );
   }
 }

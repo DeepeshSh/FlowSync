@@ -23,37 +23,17 @@ class Sale {
     required this.itemCount,
   });
 
-  factory Sale.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return Sale(
-      id: json["_id"] ?? "",
-
-      saleNumber:
-          json["saleNumber"] ?? "",
-
-      customerName:
-          json["customerName"] ?? "",
-
-      totalAmount:
-          (json["totalAmount"] ?? 0)
-              .toDouble(),
-
-      paymentStatus:
-          json["paymentStatus"] ??
-              "Pending",
-
-      saleDate:
-          json["saleDate"] != null
-              ? DateTime.parse(
-                  json["saleDate"],
-                )
-              : DateTime.now(),
-
-      itemCount:
-          json["items"] != null
-              ? json["items"].length
-              : 0,
-    );
-  }
+ factory Sale.fromJson(Map<String, dynamic> json) {
+  return Sale(
+    id: json["_id"] ?? "",
+    saleNumber: json["saleNumber"] ?? json["invoiceNo"] ?? "", // Fallback protection
+    customerName: json["customerName"] ?? "",
+    totalAmount: (json["totalAmount"] ?? 0).toDouble(),
+    paymentStatus: json["paymentStatus"] ?? json["status"] ?? "Pending", // Fallback protection
+    saleDate: json["saleDate"] != null
+        ? DateTime.parse(json["saleDate"])
+        : DateTime.now(),
+    itemCount: json["items"] is List ? (json["items"] as List).length : 0, // Robust protection
+  );
+}
 }

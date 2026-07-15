@@ -1,5 +1,19 @@
 const Sale = require("../models/Sale");
+exports.createSale = async (req, res) => {
+  try {
+    console.log("===== CREATE SALE HIT =====");
+    console.log(req.body);
 
+    const sale = await Sale.create(req.body);
+
+    res.status(201).json(sale);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 exports.createSale =
   async (req, res) => {
 

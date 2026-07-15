@@ -20,7 +20,10 @@ class _SalesScreenState extends State<SalesScreen> {
   final searchController = TextEditingController();
   String selectedCustomer = "All Customers";
   DateTimeRange? selectedDateRange;
-
+// Change this to use Sale model properties
+double _getSafeAmount(Sale sale) {
+  return sale.totalAmount; 
+}
   @override
   void initState() {
     super.initState();

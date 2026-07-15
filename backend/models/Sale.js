@@ -44,10 +44,9 @@ new mongoose.Schema({
       "Paid",
       "Pending",
       "Partially Paid",
+      "Draft" // Add "Draft" here!
     ],
-
-    default:
-        "Pending",
+    default: "Pending",
   },
 
   saleDate: {

@@ -46,8 +46,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       }
 
       if (rawMap != null) {
-        // Priority checking keys matching AddPurchaseScreen submission payload
-        final keysToTry = ['grandTotal', 'grand_total', 'totalAmount', 'total_amount', 'subtotal', 'amount'];
+        // Updated priority checking keys matching AddPurchaseScreen submission payload and total bills
+        final keysToTry = ['grandTotal', 'grand_total', 'total_bill_amount', 'totalBillAmount', 'totalAmount', 'total_amount', 'subtotal', 'amount'];
         for (final key in keysToTry) {
           if (rawMap[key] != null) {
             final parsedValue = double.tryParse(rawMap[key].toString());
@@ -73,13 +73,15 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
   }
 
-  // Deep extraction function to normalize status into three explicit categories: Paid, Pending, Draft
+  // Deep extraction function to normalize status dynamically into explicit categories: Paid, Pending, Draft
+// Deep extraction function to normalize status dynamically into explicit categories: Paid, Pending, Draft
   String _getSafeStatus(Purchase purchase) {
     try {
       final dynamic raw = purchase;
       String extractedStatus = "";
       Map<dynamic, dynamic>? rawMap;
 
+      // Extract raw representation maps safely 
       if (raw is Map) {
         rawMap = raw;
       } else {
@@ -108,20 +110,49 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       }
       
       if (extractedStatus.isEmpty) {
-        extractedStatus = purchase.paymentStatus;
+        extractedStatus = purchase.paymentStatus ?? "";
       }
 
-      // Categorize cleanly into Paid, Pending, or Draft
-      final clean = extractedStatus.trim().toLowerCase();
-      if (clean.contains("paid")) return "Paid";
-      if (clean.contains("draft")) return "Draft";
+      final cleanStatus = extractedStatus.trim().toLowerCase();
+
+      // 1. DRAFT CONDITION CHECK (Check first so financial evaluation doesn't overwrite it)
+      if (cleanStatus == "draft") {
+        return "Draft";
+      }
+
+      // 2. FINANCIAL BALANCE EVALUATION
+      double totalBillAmount = _getSafeAmount(purchase);
+      double dueAmount = 0.0; 
+
+      if (rawMap != null) {
+        // Added 'balanceDue' to match the payload submitted from AddPurchaseScreen
+        final dueKeys = ['balanceDue', 'dueAmount', 'due_amount', 'balance', 'remainingAmount', 'amountDue'];
+        bool foundDueKey = false;
+        for (final key in dueKeys) {
+          if (rawMap[key] != null) {
+            dueAmount = double.tryParse(rawMap[key].toString()) ?? 0.0;
+            foundDueKey = true;
+            break;
+          }
+        }
+        if (!foundDueKey && cleanStatus != "pending") {
+          dueAmount = 0.0;
+        } else if (!foundDueKey && cleanStatus == "pending") {
+          dueAmount = totalBillAmount;
+        }
+      }
+
+      // 3. PAID CONDITION: Explicit paid status value or no balance remaining
+      if (cleanStatus == "paid" || (totalBillAmount > 0 && dueAmount == 0)) {
+        return "Paid";
+      }
       
+      // 4. PENDING CONDITION: Fallback default if amount is due
       return "Pending";
     } catch (_) {
       return "Pending";
     }
   }
-
   Future<void> loadPurchases() async {
     try {
       final data = await PurchaseService().getPurchases();

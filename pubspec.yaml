@@ -32,16 +32,16 @@ dependencies:
     sdk: flutter
 
   dio: ^5.9.0
-
-
+  shared_preferences: ^2.5.3
   image_picker: ^1.1.2
-
   cupertino_icons: ^1.0.8
   fl_chart: ^0.66.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
 
     
   # The "flutter_lints" package below contains a set of recommended lints to

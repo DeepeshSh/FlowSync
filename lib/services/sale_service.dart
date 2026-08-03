@@ -3,28 +3,19 @@ import '../config/api_config.dart';
 import '../models/sale_model.dart';
 
 class SaleService {
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: "${ApiConfig.baseUrl}",
-    ),
-  );
+  final Dio dio = Dio(BaseOptions(baseUrl: "${ApiConfig.baseUrl}"));
 
   Future<List<Sale>> getSales() async {
-    final response = await dio.get(
-      "/sales",
-    );
+    final response = await dio.get("/sales");
 
-    return (response.data as List)
-        .map(
-          (e) => Sale.fromJson(e),
-        )
-        .toList();
+    return (response.data as List).map((e) => Sale.fromJson(e)).toList();
   }
 
   Future<void> createSale({
     required String saleNumber,
     required String customerName,
-    required List<dynamic> items, // Fixed: Changed from List<Map<String, dynamic>> to List<dynamic> to prevent Dart runtime type crashes
+    required List<dynamic>
+    items, // Fixed: Changed from List<Map<String, dynamic>> to List<dynamic> to prevent Dart runtime type crashes
     required double totalAmount,
     required String paymentStatus,
   }) async {
@@ -36,45 +27,30 @@ class SaleService {
         "productId": itemMap["productId"],
         "productName": itemMap["productName"],
         "quantity": itemMap["quantity"],
-        "sellingPrice": itemMap["rate"] ?? itemMap["sellingPrice"] ?? 0.0, // Maps 'rate' -> 'sellingPrice'
-        "total": itemMap["amount"] ?? itemMap["total"] ?? 0.0,             // Maps 'amount' -> 'total'
+        "sellingPrice":
+            itemMap["rate"] ??
+            itemMap["sellingPrice"] ??
+            0.0, // Maps 'rate' -> 'sellingPrice'
+        "total":
+            itemMap["amount"] ??
+            itemMap["total"] ??
+            0.0, // Maps 'amount' -> 'total'
       };
     }).toList();
 
+    final body = {
+      "saleNumber": saleNumber,
+      "customerName": customerName,
+      "items": normalizedItems,
+      "totalAmount": totalAmount,
+      "paymentStatus": paymentStatus,
+    };
 
-final body = {
-  "saleNumber": saleNumber,
-  "customerName": customerName,
-  "items": normalizedItems,
-  "totalAmount": totalAmount,
-  "paymentStatus": paymentStatus,
-};
+    print("REQUEST BODY:");
+    print(body);
 
-print("REQUEST BODY:");
-print(body);
-
-await dio.post(
-  "/sales",
-  data: body,
-);
-
-    await dio.post(
-      "/sales",
-      data: {
-        "saleNumber": saleNumber, 
-        "customerName": customerName,
-        "items": normalizedItems,
-        "totalAmount": totalAmount,
-        "paymentStatus": paymentStatus, 
-      },
-    );
-  }
-
-  Future<void> deleteSale(
-    String id,
-  ) async {
-    await dio.delete(
-      "/sales/$id",
-    );
+    Future<void> deleteSale(String id) async {
+      await dio.delete("/sales/$id");
+    }
   }
 }

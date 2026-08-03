@@ -6,9 +6,12 @@ const router =
 const {
   register,
   login,
+  getMe,
 } = require(
   "../controllers/auth.controller"
 );
+
+const authMiddleware = require("../middleware/authMiddleware");
 
 router.post(
   "/register",
@@ -18,6 +21,12 @@ router.post(
 router.post(
   "/login",
   login,
+);
+
+router.get(
+  "/me",
+  authMiddleware,
+  getMe,
 );
 
 module.exports = router;

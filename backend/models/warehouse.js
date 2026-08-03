@@ -44,6 +44,18 @@ const warehouseSchema = new mongoose.Schema(
       default: "Secondary",
     },
 
+    // NEW: Total storage capacity of the warehouse, expressed in stock
+    // units (pieces). Used by the dashboard to compute "Utilization %"
+    // (totalStockUnits / totalCapacity). Defaults to 0 for existing
+    // warehouses created before this field was added — update these
+    // records (via PUT /api/warehouses/:id) so utilization reflects
+    // real capacity instead of showing 0%.
+    capacity: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     isActive: {
       type: Boolean,
       default: true,

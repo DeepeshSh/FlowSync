@@ -106,7 +106,7 @@ exports.login = async (
           {
             id: user._id,
           },
-          "flowsyncsecret",
+          process.env.JWT_SECRET || "flowsyncsecret",
           {
             expiresIn: "7d",
           },
@@ -125,3 +125,29 @@ exports.login = async (
       });
     }
   };
+
+// Returns the currently logged-in user's profile (name, businessName,
+// email) based on the Bearer token set by authMiddleware. Used by the
+// dashboard header to greet the user by name and show their business name.
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

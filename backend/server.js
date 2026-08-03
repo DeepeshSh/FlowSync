@@ -85,10 +85,17 @@ app.use(
 variantRoutes
 );
 
+const dashboardRoutes =
+require("./routes/dashboard.routes");
+
+app.use(
+  "/api/dashboard",
+  dashboardRoutes
+);
+
 const PORT =
 process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server Running On Port ${PORT}`);
 });
-

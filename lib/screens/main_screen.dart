@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'inventory_screen.dart';
-import '/screens/purchase_screen.dart';
-import 'sales_screen.dart';
-import 'more_screen.dart';
-// Stub placeholder classes for your custom imports (remove if these already exist in your files)
+import 'dart:math' as math;
 
-void main() {
-  runApp(const FlowSyncApp());
-}
+// Screen imports requested by your bottom navigation layout
+import 'inventory_screen.dart';
+import 'purchase_screen.dart';
+import 'more_screen.dart';
+import 'sales_screen.dart';
+
+import '/models/app_user.dart';
+import '/models/dashboard_summary.dart';
+import '/services/auth_service.dart';
+import '/services/dashboard_service.dart';
+
+void main() => runApp(const FlowSyncApp());
 
 class FlowSyncApp extends StatelessWidget {
   const FlowSyncApp({super.key});
@@ -16,19 +20,95 @@ class FlowSyncApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'FlowSync',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Roboto',
-        scaffoldBackgroundColor: const Color(
-          0xFFF8FAFC,
-        ), // Brighter, cleaner backdrop
+        scaffoldBackgroundColor: const Color(0xFFF4F7FC), // Soft, modern grey-blue background
+        useMaterial3: true,
       ),
       home: const MainScreen(),
     );
   }
 }
 
+// ---------- COLORS ----------
+class AppColors {
+  static const blue = Color(0xFF2F80FF);
+  static const green = Color(0xFF1FAE6A);
+  static const orange = Color(0xFFF5A623);
+  static const red = Color(0xFFEF5A5A);
+  static const purple = Color(0xFF8B6FF0);
+  static const darkText = Color(0xFF1A1D29);
+  static const greyText = Color(0xFF7A8293);
+  static const cardBg = Colors.white;
+}
+
+// ---------- FORMATTING HELPERS ----------
+// Indian-style digit grouping, e.g. 1,42,680 (matches the original mock's
+// hardcoded "₹ 1,42,680" / "₹ 52,420" values).
+String formatIndianCurrency(double value) {
+  final isNegative = value < 0;
+  final v = value.abs();
+  final intPart = v.toStringAsFixed(0);
+
+  String lastThree =
+      intPart.length > 3 ? intPart.substring(intPart.length - 3) : intPart;
+  String otherDigits =
+      intPart.length > 3 ? intPart.substring(0, intPart.length - 3) : '';
+
+  if (otherDigits.isNotEmpty) {
+    otherDigits = otherDigits.replaceAllMapped(
+      RegExp(r'\B(?=(\d{2})+(?!\d))'),
+      (match) => ',',
+    );
+    lastThree = ',$lastThree';
+  }
+
+  return '${isNegative ? '-' : ''}₹ $otherDigits$lastThree';
+}
+
+// Plain thousands grouping for non-currency counts, e.g. 1,245 items.
+String formatCount(num value) {
+  final intPart = value.toStringAsFixed(0);
+  return intPart.replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (match) => ',',
+  );
+}
+
+String formatLakhs(double value) {
+  return '₹ ${(value / 100000).toStringAsFixed(1)}L';
+}
+
+String formatPercentDelta(double changePercent) {
+  return '${changePercent.abs().toStringAsFixed(1)}%';
+}
+
+String formatRelativeDateTime(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final that = DateTime(dt.year, dt.month, dt.day);
+  final diffDays = today.difference(that).inDays;
+
+  final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+  final minute = dt.minute.toString().padLeft(2, '0');
+  final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+  final timeStr = '$hour12:$minute $ampm';
+
+  if (diffDays == 0) return 'Today, $timeStr';
+  if (diffDays == 1) return 'Yesterday';
+  return '${dt.day}/${dt.month}/${dt.year}';
+}
+
+String greetingForNow() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+// ---------- MAIN SCREEN (COORDINATOR WITH NAVIGATION) ----------
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -39,30 +119,27 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int selectedIndex = 0;
 
-  late final List<Widget> screens;
-
-  @override
-  void initState() {
-    super.initState();
-    screens = [
-      const DashboardContentView(), // Injected your fully overhauled Dashboard screen content here
-      const InventoryScreen(),
-      const PurchaseScreen(),
-      const SalesScreen(),
-      const MoreScreen(),
-    ];
-  }
+  final List<Widget> screens = const [
+    DashboardScreen(), // Backend-synced dashboard (Home)
+    InventoryScreen(),
+    PurchaseScreen(),
+    SalesScreen(),
+    MoreScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: screens[selectedIndex],
+      body: IndexedStack(
+        index: selectedIndex,
+        children: screens,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
               offset: const Offset(0, -2),
             ),
           ],
@@ -71,8 +148,8 @@ class _MainScreenState extends State<MainScreen> {
           currentIndex: selectedIndex,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF2F80FF),
-          unselectedItemColor: Colors.grey[500],
+          selectedItemColor: AppColors.blue,
+          unselectedItemColor: Colors.grey[400],
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
@@ -112,125 +189,292 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-// --- CLEANED & RESPONSIVE DASHBOARD LAYOUT CONTENT ---
-class DashboardContentView extends StatelessWidget {
-  const DashboardContentView({super.key});
+// ---------- SPACIOUS DASHBOARD SCREEN (HOME) ----------
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final DashboardService _dashboardService = DashboardService();
+  final AuthService _authService = AuthService();
+
+  DashboardSummary? _summary;
+  AppUser? _user;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser(); // fire-and-forget, header updates independently as it resolves
+    _loadDashboard();
+  }
+
+  Future<void> _loadUser() async {
+    final cached = await _authService.getCachedUser();
+    if (cached != null && mounted) {
+      setState(() => _user = cached);
+    }
+    final fresh = await _authService.fetchCurrentUser();
+    if (fresh != null && mounted) {
+      setState(() => _user = fresh);
+    }
+  }
+
+  Future<void> _loadDashboard() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final summary = await _dashboardService.getDashboardSummary();
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopMetricsGrid(),
-                  const SizedBox(height: 28),
-                  _buildSectionHeader(
-                    "Warehouse Analytics",
-                    showViewDetails: true,
+    if (_isLoading && _summary == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4F7FC),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.blue),
+        ),
+      );
+    }
+
+    if (_error != null && _summary == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F7FC),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_rounded,
+                    size: 44, color: AppColors.greyText),
+                const SizedBox(height: 12),
+                Text(
+                  "Couldn't load dashboard.\n$_error",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.greyText, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadDashboard,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blue,
+                    foregroundColor: Colors.white,
                   ),
-                  const SizedBox(height: 14),
-                  _buildWarehouseAnalyticsGrid(),
-                  const SizedBox(height: 28),
-                  _buildDistributionAndAlertsSplit(),
-                  const SizedBox(height: 28),
-                  _buildSectionHeader("Quick Actions"),
-                  const SizedBox(height: 14),
-                  _buildQuickActionsGrid(),
-                  const SizedBox(height: 28),
-                  _buildSectionHeader("Recent Transactions", showViewAll: true),
-                  const SizedBox(height: 14),
-                  _buildRecentTransactionsSection(),
-                ],
-              ),
+                  child: const Text("Retry"),
+                ),
+              ],
             ),
-          ],
+          ),
+        ),
+      );
+    }
+
+    final summary = _summary!;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7FC),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([_loadDashboard(), _loadUser()]);
+          },
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HeaderSection(user: _user),
+                const SizedBox(height: 24),
+                _StatsGrid(summary: summary),
+                const SizedBox(height: 24),
+                _SectionCard(
+                  title: 'Warehouse Analytics',
+                  actionLabel: 'View Details',
+                  child: _WarehouseAnalytics(data: summary.warehouseAnalytics),
+                ),
+                const SizedBox(height: 24),
+                _SectionCard(
+                  title: 'Category Distribution',
+                  actionLabel: 'View Details',
+                  child: _CategoryDistribution(
+                    categories: summary.categoryDistribution,
+                    totalUnits: summary.totalStockUnits,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _SectionCard(
+                  title: 'Low Stock Alerts',
+                  actionLabel: 'View All',
+                  child: _LowStockAlerts(alerts: summary.lowStockAlerts),
+                ),
+                const SizedBox(height: 24),
+                const _SectionCard(
+                  title: 'Quick Actions',
+                  child: _QuickActions(),
+                ),
+                const SizedBox(height: 24),
+                _SectionCard(
+                  title: 'Recent Transactions',
+                  actionLabel: 'View All',
+                  child: _RecentTransactions(
+                    sales: summary.recentSales,
+                    purchases: summary.recentPurchases,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
+// ---------- HEADER SECTION ----------
+class _HeaderSection extends StatelessWidget {
+  final AppUser? user;
+  const _HeaderSection({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName =
+        (user?.name.isNotEmpty ?? false) ? user!.name : 'there';
+    final businessName = user?.businessName ?? '';
+
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFE8F1FF), Color(0xFFF8FAFC)],
+          colors: [Color(0xFFE8F0FF), Color(0xFFF4F7FC)],
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black87),
-                onPressed: () {},
+              _RoundIconButton(
+                icon: Icons.menu,
+                onTap: () {},
               ),
-              const Text(
-                'FlowSync',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F80FF),
-                ),
-              ),
-              Badge(
-                label: const Text('3'),
-                backgroundColor: Colors.red,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none_outlined,
-                    color: Colors.black87,
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
                   ),
-                  onPressed: () {},
+                  children: [
+                    TextSpan(
+                        text: 'Flow', style: TextStyle(color: AppColors.darkText)),
+                    TextSpan(
+                        text: 'Sync', style: TextStyle(color: AppColors.blue)),
+                  ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Good Morning, Deepesh',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
+                  _RoundIconButton(icon: Icons.notifications_none, onTap: () {}),
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 6),
-                      const Text('👋', style: TextStyle(fontSize: 20)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Raj Sanitary & Hardware',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      letterSpacing: 0.3,
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      child: const Text(
+                        '3',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '${greetingForNow()}, $displayName',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.darkText,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text('👋', style: TextStyle(fontSize: 22)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      businessName.isNotEmpty ? businessName : 'Your Business',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.greyText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    )
+                  ],
+                ),
+                child: const Icon(Icons.store_mall_directory_outlined,
+                    size: 32, color: AppColors.blue),
               ),
             ],
           ),
@@ -238,777 +482,832 @@ class DashboardContentView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildTopMetricsGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.35, // Added padding depth inside boxes
-      crossAxisSpacing: 14,
-      mainAxisSpacing: 14,
-      children: [
-        _buildMetricCard(
-          "Today's Sales",
-          "₹ 52,420",
-          "+ 15.6%",
-          "vs yesterday",
-          Colors.blue,
-          Icons.trending_up,
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _RoundIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 0.5,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Icon(icon, color: AppColors.darkText, size: 22),
         ),
-        _buildMetricCard(
-          "Today's Purchases",
-          "₹ 28,750",
-          "+ 12.4%",
-          "vs yesterday",
-          Colors.green,
-          Icons.shopping_cart_outlined,
-        ),
-        _buildMetricCard(
-          "Today's Orders",
-          "23",
-          "+ 8.3%",
-          "vs yesterday",
-          Colors.orange,
-          Icons.description_outlined,
-        ),
-        _buildMetricCard(
-          "Pending Payments",
-          "₹ 1,42,680",
-          "- 6.7%",
-          "from last week",
-          Colors.red,
-          Icons.account_balance_wallet_outlined,
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildMetricCard(
-    String title,
-    String value,
-    String percentage,
-    String label,
-    Color color,
-    IconData icon,
-  ) {
-    bool isPositive = !percentage.contains('-');
+// ---------- STATS GRID ----------
+class _StatData {
+  final String title;
+  final String value;
+  final String delta;
+  final bool isUp;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  const _StatData(this.title, this.value, this.delta, this.isUp,
+      this.subtitle, this.icon, this.color);
+}
+
+class _StatsGrid extends StatelessWidget {
+  final DashboardSummary summary;
+  const _StatsGrid({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = [
+      _StatData(
+        "Today's Sales",
+        formatIndianCurrency(summary.todaysSales.value),
+        formatPercentDelta(summary.todaysSales.changePercent),
+        summary.todaysSales.isUp,
+        'vs yesterday',
+        Icons.trending_up,
+        AppColors.blue,
+      ),
+      _StatData(
+        "Today's Purchases",
+        formatIndianCurrency(summary.todaysPurchases.value),
+        formatPercentDelta(summary.todaysPurchases.changePercent),
+        summary.todaysPurchases.isUp,
+        'vs yesterday',
+        Icons.shopping_cart,
+        AppColors.green,
+      ),
+      _StatData(
+        "Today's Orders",
+        summary.todaysOrders.value.toStringAsFixed(0),
+        formatPercentDelta(summary.todaysOrders.changePercent),
+        summary.todaysOrders.isUp,
+        'vs yesterday',
+        Icons.assignment,
+        AppColors.orange,
+      ),
+      _StatData(
+        'Pending Payments',
+        formatIndianCurrency(summary.pendingPayments.value),
+        formatPercentDelta(summary.pendingPayments.changePercent),
+        summary.pendingPayments.isUp,
+        'from last week',
+        Icons.account_balance_wallet,
+        AppColors.red,
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: stats.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.35, // Ensures beautiful proportions for content inside cards
+        ),
+        itemBuilder: (context, i) => _StatCard(data: stats[i]),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final _StatData data;
+  const _StatCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 18),
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-              letterSpacing: -0.5,
-            ),
-          ),
-          Row(
-            children: [
-              Icon(
-                isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 13,
-                color: isPositive ? Colors.green : Colors.red,
-              ),
-              const SizedBox(width: 2),
-              Text(
-                percentage,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isPositive ? Colors.green : Colors.red,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWarehouseAnalyticsGrid() {
-    return GridView.count(
-      crossAxisCount:
-          2, // Cut grid into 2x2 profile so labels can be perfectly read without truncation
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.6,
-      crossAxisSpacing: 14,
-      mainAxisSpacing: 14,
-      children: [
-        _buildWarehouseItem(
-          "Stock Value",
-          "₹ 18.6L",
-          "Total Stock Value",
-          Icons.home_outlined,
-          Colors.blue,
-        ),
-        _buildWarehouseItemCircle(
-          "Utilization",
-          "72%",
-          "Warehouse Capacity",
-          Colors.green,
-        ),
-        _buildWarehouseItem(
-          "Total Items",
-          "1,245",
-          "Products Stored",
-          Icons.layers_outlined,
-          Colors.purple,
-        ),
-        _buildWarehouseItem(
-          "Avg. Stock Age",
-          "45 Days",
-          "Average across catalog",
-          Icons.assignment_outlined,
-          Colors.orange,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWarehouseItem(
-    String title,
-    String val,
-    String sub,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 6),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  val,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  sub,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[400],
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWarehouseItemCircle(
-    String title,
-    String val,
-    String sub,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 6),
-        ],
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            height: 32,
-            width: 32,
-            child: CircularProgressIndicator(
-              value: 0.72,
-              strokeWidth: 4,
-              backgroundColor: Colors.grey[100],
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  val,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  sub,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[400],
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDistributionAndAlertsSplit() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader(
-                "Category Distribution",
-                showViewDetails: true,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: Stack(
-                      children: [
-                        PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 30,
-                            sections: [
-                              PieChartSectionData(
-                                color: Colors.blue,
-                                value: 35,
-                                radius: 14,
-                                showTitle: false,
-                              ),
-                              PieChartSectionData(
-                                color: Colors.teal,
-                                value: 25,
-                                radius: 14,
-                                showTitle: false,
-                              ),
-                              PieChartSectionData(
-                                color: Colors.purple,
-                                value: 20,
-                                radius: 14,
-                                showTitle: false,
-                              ),
-                              PieChartSectionData(
-                                color: Colors.orange,
-                                value: 10,
-                                radius: 14,
-                                showTitle: false,
-                              ),
-                              PieChartSectionData(
-                                color: Colors.grey,
-                                value: 10,
-                                radius: 14,
-                                showTitle: false,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Total",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Text(
-                                "1,245",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildLegendItem(
-                          "Pipes & Fittings",
-                          "35%",
-                          Colors.blue,
-                        ),
-                        _buildLegendItem("Sanitaryware", "25%", Colors.teal),
-                        _buildLegendItem("Hardware", "20%", Colors.purple),
-                        _buildLegendItem(
-                          "Bath Accessories",
-                          "10%",
-                          Colors.orange,
-                        ),
-                        _buildLegendItem("Others", "10%", Colors.grey),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader("Low Stock Alerts", showViewAll: true),
-              const SizedBox(height: 14),
-              _buildAlertItem("PVC Pipe 4\"", "1 Units"),
-              _buildAlertItem("Wash Basin White", "2 Units"),
-              _buildAlertItem("Bib Cock Long Body", "4 Units"),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegendItem(String label, String percent, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 13, color: Colors.black87),
-            ),
-          ),
-          Text(
-            percent,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAlertItem(String title, String count) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.red[50]?.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(
-              Icons.image_not_supported_outlined,
-              size: 16,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "Stock Remaining: $count",
-                  style: const TextStyle(fontSize: 11, color: Colors.red),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsGrid() {
-    return GridView.count(
-      crossAxisCount:
-          3, // Changed from 6 columns to 3 columns to stop cramped text icons
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.2,
-      children: [
-        _buildActionItem("Add Sale", Icons.add_shopping_cart, Colors.blue),
-        _buildActionItem(
-          "Add Purchase",
-          Icons.shopping_bag_outlined,
-          Colors.green,
-        ),
-        _buildActionItem(
-          "Add Product",
-          Icons.all_inbox_outlined,
-          Colors.purple,
-        ),
-        _buildActionItem("Add Customer", Icons.person_add_alt, Colors.orange),
-        _buildActionItem(
-          "Add Supplier",
-          Icons.local_shipping_outlined,
-          Colors.teal,
-        ),
-        _buildActionItem("Stock Adjust", Icons.tune, Colors.blueGrey),
-      ],
-    );
-  }
-
-  Widget _buildActionItem(String label, IconData icon, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 4),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: data.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(data.icon, color: data.color, size: 20),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
+          const Spacer(),
+          Text(data.title,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.greyText, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text(data.value,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkText,
+                  letterSpacing: -0.5)),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(
+                data.isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 13,
+                color: data.isUp ? AppColors.green : AppColors.red,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                data.delta,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: data.isUp ? AppColors.green : AppColors.red,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  data.subtitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.greyText),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildRecentTransactionsSection() {
-    return Column(
-      children: [
-        _buildTransactionBlock(
-          "Recent Sales",
-          Icons.shopping_cart,
-          Colors.blue,
-          [
-            _buildTransactionItem(
-              "S-INV-1025",
-              "Rakesh Hardware",
-              "₹ 8,450",
-              "Today, 10:30 AM",
-              Colors.green,
-            ),
-            _buildTransactionItem(
-              "S-INV-1024",
-              "Shri Ram Traders",
-              "₹ 5,210",
-              "Today, 09:15 AM",
-              Colors.green,
-            ),
+// ---------- GENERIC SPACIOUS SECTION CARD ----------
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String? actionLabel;
+  final Widget child;
+  final EdgeInsets padding;
+
+  const _SectionCard({
+    required this.title,
+    this.actionLabel,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 16,
+                offset: const Offset(0, 6)),
           ],
         ),
-        const SizedBox(height: 16),
-        _buildTransactionBlock(
-          "Recent Purchases",
-          Icons.assignment_turned_in_outlined,
-          Colors.blueGrey,
-          [
-            _buildTransactionItem(
-              "P-INV-0542",
-              "ABC Sanitary Traders",
-              "₹ 12,450",
-              "Today, 11:20 AM",
-              Colors.blue,
+        padding: padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkText)),
+                if (actionLabel != null)
+                  GestureDetector(
+                    onTap: () {},
+                    child: Row(
+                      children: [
+                        Text(actionLabel!,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.blue)),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right,
+                            size: 16, color: AppColors.blue),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-            _buildTransactionItem(
-              "P-INV-0541",
-              "Khandelwal Hardware",
-              "₹ 9,800",
-              "Today, 10:05 AM",
-              Colors.blue,
-            ),
+            const SizedBox(height: 20),
+            child,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------- WAREHOUSE ANALYTICS ----------
+class _WarehouseAnalytics extends StatelessWidget {
+  final WarehouseAnalyticsData data;
+  const _WarehouseAnalytics({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    // Organised into a spacious 2x2 layout instead of a cramped row of 4 columns
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.5,
+      children: [
+        _buildItem(
+          icon: Icons.home_work_outlined,
+          iconBg: AppColors.blue.withOpacity(0.12),
+          iconColor: AppColors.blue,
+          title: 'Stock Value',
+          value: formatLakhs(data.stockValue),
+          subtitle: 'Total Stock Value',
+        ),
+        _buildItem(
+          icon: Icons.pie_chart_outline,
+          iconBg: AppColors.green.withOpacity(0.12),
+          iconColor: AppColors.green,
+          title: 'Utilization',
+          value: '${data.utilizationPercent.toStringAsFixed(0)}%',
+          progress: (data.utilizationPercent / 100).clamp(0.0, 1.0),
+          subtitle: 'Warehouse Capacity',
+        ),
+        _buildItem(
+          icon: Icons.inventory_2_outlined,
+          iconBg: AppColors.purple.withOpacity(0.12),
+          iconColor: AppColors.purple,
+          title: 'Total Items',
+          value: formatCount(data.totalItems),
+          subtitle: 'Products Stored',
+        ),
+        _buildItem(
+          icon: Icons.assignment_outlined,
+          iconBg: AppColors.orange.withOpacity(0.12),
+          iconColor: AppColors.orange,
+          title: 'Avg. Stock Age',
+          value: '${data.avgStockAgeDays} Days',
+          subtitle: 'Average Catalog Age',
         ),
       ],
     );
   }
 
-  Widget _buildTransactionBlock(
-    String title,
-    IconData headerIcon,
-    Color headerColor,
-    List<Widget> items,
-  ) {
+  Widget _buildItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String value,
+    required String subtitle,
+    double? progress,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(headerIcon, size: 16, color: headerColor),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: headerColor,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(icon, color: iconColor, size: 16),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: AppColors.greyText, fontWeight: FontWeight.w500)),
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Divider(height: 1),
-          ),
-          const SizedBox(height: 8),
-          ...items,
+          const Spacer(),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkText)),
+          const SizedBox(height: 4),
+          if (progress != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: const Color(0xFFE6E9F0),
+                valueColor: const AlwaysStoppedAnimation(AppColors.green),
+              ),
+            )
+          else
+            Text(subtitle,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: AppColors.greyText)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTransactionItem(
-    String inv,
-    String name,
-    String amount,
-    String time,
-    Color iconColor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Icon(Icons.arrow_circle_right_outlined, color: iconColor, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      inv,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      amount,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      time,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+// ---------- CATEGORY DISTRIBUTION (PIE) ----------
+class _CategoryData {
+  final String label;
+  final double percent;
+  final Color color;
+  const _CategoryData(this.label, this.percent, this.color);
+}
 
-  Widget _buildSectionHeader(
-    String title, {
-    bool showViewDetails = false,
-    bool showViewAll = false,
-  }) {
+class _CategoryDistribution extends StatelessWidget {
+  final List<CategorySlice> categories;
+  final int totalUnits;
+  const _CategoryDistribution({required this.categories, required this.totalUnits});
+
+  static const _palette = [
+    AppColors.blue,
+    AppColors.green,
+    AppColors.purple,
+    AppColors.orange,
+    Color(0xFF9CA3AF),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (categories.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'No stock data yet.',
+          style: TextStyle(color: AppColors.greyText, fontSize: 13),
+        ),
+      );
+    }
+
+    final slices = <_CategoryData>[
+      for (var i = 0; i < categories.length; i++)
+        _CategoryData(
+          categories[i].label,
+          categories[i].percent,
+          _palette[i % _palette.length],
+        ),
+    ];
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        SizedBox(
+          width: 120,
+          height: 120,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: const Size(120, 120),
+                painter: _DonutPainter(slices),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Total',
+                      style: TextStyle(
+                          fontSize: 11, color: AppColors.greyText, fontWeight: FontWeight.w500)),
+                  Text(formatCount(totalUnits),
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.darkText)),
+                ],
+              ),
+            ],
           ),
         ),
-        if (showViewDetails)
-          Text(
-            'View Details ›',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.blue[700],
-              fontWeight: FontWeight.bold,
-            ),
-          )
-        else if (showViewAll)
-          Text(
-            'View All',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.blue[700],
-              fontWeight: FontWeight.bold,
-            ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: slices
+                .map((c) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                                color: c.color, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(c.label,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.darkText,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                          Text('${c.percent.toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.darkText)),
+                        ],
+                      ),
+                    ))
+                .toList(),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  final List<_CategoryData> categories;
+  _DonutPainter(this.categories);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    const strokeWidth = 16.0;
+    double startAngle = -math.pi / 2;
+    for (final c in categories) {
+      final sweep = (c.percent / 100) * 2 * math.pi;
+      final paint = Paint()
+        ..color = c.color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round; // Rounded endpoints look elegant
+      canvas.drawArc(
+        rect.deflate(strokeWidth / 2),
+        startAngle,
+        sweep,
+        false,
+        paint,
+      );
+      startAngle += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ---------- LOW STOCK ALERTS ----------
+class _LowStockAlerts extends StatelessWidget {
+  final List<LowStockAlertItem> alerts;
+  const _LowStockAlerts({required this.alerts});
+
+  @override
+  Widget build(BuildContext context) {
+    if (alerts.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Nothing running low right now 🎉',
+          style: TextStyle(color: AppColors.greyText, fontSize: 13),
+        ),
+      );
+    }
+
+    // Show top 3 to match the original card's density; "View All" is the
+    // affordance for the rest.
+    final visible = alerts.take(3).toList();
+
+    return Column(
+      children: visible
+          .map((a) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.red.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.red.withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.inventory_2_outlined,
+                          color: AppColors.darkText, size: 20),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(a.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.darkText)),
+                          const SizedBox(height: 3),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.greyText),
+                              children: [
+                                const TextSpan(text: 'Current Stock: '),
+                                TextSpan(
+                                  text: '${a.stock} Units',
+                                  style: const TextStyle(
+                                      color: AppColors.red,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.warning_rounded,
+                        color: AppColors.red, size: 22),
+                  ],
+                ),
+              ))
+          .toList(),
+    );
+  }
+}
+
+// ---------- QUICK ACTIONS ----------
+// Static shortcuts — not backend data, left exactly as in the original.
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _QuickAction(this.icon, this.label, this.color);
+}
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions();
+
+  static const actions = [
+    _QuickAction(Icons.shopping_cart_outlined, 'Add Sale', AppColors.blue),
+    _QuickAction(Icons.add_shopping_cart, 'Add Purchase', AppColors.green),
+    _QuickAction(Icons.inventory_2_outlined, 'Add Product', AppColors.purple),
+    _QuickAction(Icons.person_add_alt_outlined, 'Add Customer', AppColors.orange),
+    _QuickAction(Icons.local_shipping_outlined, 'Add Supplier', AppColors.green),
+    _QuickAction(Icons.assignment_outlined, 'Stock Adjust', AppColors.blue),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // 3 columns layout with proportional size values prevents labels from wrapping poorly
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: actions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 1.05,
+      ),
+      itemBuilder: (context, i) {
+        final a = actions[i];
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: a.color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(a.icon, color: a.color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                a.label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkText),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------- RECENT TRANSACTIONS ----------
+class _Transaction {
+  final String id;
+  final String name;
+  final String amount;
+  final String time;
+  const _Transaction(this.id, this.name, this.amount, this.time);
+}
+
+class _RecentTransactions extends StatelessWidget {
+  final List<RecentTxn> sales;
+  final List<RecentTxn> purchases;
+  const _RecentTransactions({required this.sales, required this.purchases});
+
+  @override
+  Widget build(BuildContext context) {
+    final saleItems = sales
+        .map((t) => _Transaction(
+              t.id,
+              t.name,
+              formatIndianCurrency(t.amount),
+              formatRelativeDateTime(t.date),
+            ))
+        .toList();
+    final purchaseItems = purchases
+        .map((t) => _Transaction(
+              t.id,
+              t.name,
+              formatIndianCurrency(t.amount),
+              formatRelativeDateTime(t.date),
+            ))
+        .toList();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+        final salesCol = _TransactionColumn(
+          title: 'Recent Sales',
+          icon: Icons.shopping_cart_outlined,
+          color: AppColors.blue,
+          items: saleItems,
+          itemIcon: Icons.shopping_cart_outlined,
+          itemIconBg: AppColors.green.withOpacity(0.1),
+          itemIconColor: AppColors.green,
+        );
+        final purchaseCol = _TransactionColumn(
+          title: 'Recent Purchases',
+          icon: Icons.local_shipping_outlined,
+          color: AppColors.darkText,
+          items: purchaseItems,
+          itemIcon: Icons.local_shipping_outlined,
+          itemIconBg: AppColors.blue.withOpacity(0.1),
+          itemIconColor: AppColors.blue,
+        );
+        if (isNarrow) {
+          return Column(
+            children: [
+              salesCol,
+              const SizedBox(height: 24),
+              purchaseCol,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: salesCol),
+            const SizedBox(width: 20),
+            Expanded(child: purchaseCol),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TransactionColumn extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<_Transaction> items;
+  final IconData itemIcon;
+  final Color itemIconBg;
+  final Color itemIconColor;
+
+  const _TransactionColumn({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.items,
+    required this.itemIcon,
+    required this.itemIconBg,
+    required this.itemIconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F7FC),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('No transactions yet.',
+                style: TextStyle(color: AppColors.greyText, fontSize: 12)),
+          )
+        else
+          ...items.map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: itemIconBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(itemIcon, size: 16, color: itemIconColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t.id,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.darkText)),
+                          const SizedBox(height: 2),
+                          Text(t.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.greyText, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(t.amount,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.darkText)),
+                        const SizedBox(height: 2),
+                        Text(t.time,
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
+                ),
+              )),
       ],
     );
   }

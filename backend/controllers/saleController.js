@@ -14,28 +14,7 @@ exports.createSale = async (req, res) => {
     });
   }
 };
-exports.createSale =
-  async (req, res) => {
 
-    try {
-
-      const sale =
-        await Sale.create(
-          req.body
-        );
-
-      res.status(201).json(
-        sale
-      );
-
-    } catch (error) {
-
-      res.status(500).json({
-        message:
-          error.message,
-      });
-    }
-  };
 
 exports.getSales =
   async (req, res) => {

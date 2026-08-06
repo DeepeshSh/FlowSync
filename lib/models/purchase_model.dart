@@ -7,6 +7,12 @@ class Purchase {
   final String supplierName;
   final String contactPerson;
   final String phone;
+  final String email;
+final String gstNumber;
+final String address;
+final String city;
+final String state;
+final String pincode;
   final String paymentTerms;
   final DateTime purchaseDate;
   final DateTime? deliveryDate;
@@ -29,6 +35,12 @@ class Purchase {
     required this.supplierName,
     required this.contactPerson,
     required this.phone,
+    required this.email,
+required this.gstNumber,
+required this.address,
+required this.city,
+required this.state,
+required this.pincode,
     required this.paymentTerms,
     required this.purchaseDate,
     required this.deliveryDate,
@@ -53,6 +65,12 @@ class Purchase {
       supplierName: json["supplierName"] ?? "",
       contactPerson: json["contactPerson"] ?? "",
       phone: json["phone"] ?? "",
+      email: json["email"] ?? "",
+gstNumber: json["gstNumber"] ?? "",
+address: json["address"] ?? "",
+city: json["city"] ?? "",
+state: json["state"] ?? "",
+pincode: json["pincode"] ?? "",
       paymentTerms: json["paymentTerms"] ?? "",
       purchaseDate: json["purchaseDate"] != null
           ? DateTime.parse(json["purchaseDate"])
@@ -88,6 +106,12 @@ class Purchase {
       "supplierName": supplierName,
       "contactPerson": contactPerson,
       "phone": phone,
+      "email": email,
+"gstNumber": gstNumber,
+"address": address,
+"city": city,
+"state": state,
+"pincode": pincode,
       "paymentTerms": paymentTerms,
       "purchaseDate": purchaseDate.toIso8601String(),
       "deliveryDate": deliveryDate?.toIso8601String(),

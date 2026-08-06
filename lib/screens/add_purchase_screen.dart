@@ -38,7 +38,6 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   final searchController = TextEditingController();
   final TextEditingController advancePaymentController =
       TextEditingController();
-  final deliveryNoteController = TextEditingController();
 
   double gstPercentage = 18.0;
   double advancePayment = 0.0;
@@ -67,7 +66,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   @override
   void dispose() {
     notesController.dispose();
-    deliveryNoteController.dispose();
+
     contactPersonController.dispose();
     phoneController.dispose();
     paymentTermsController.dispose();
@@ -236,36 +235,84 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     _updateState(() => isSaving = true);
 
     try {
-      final orderPayload = {
-        "purchaseNumber": purchaseNumber,
-        "supplierId": selectedSupplier!.id,
-        "supplierName": selectedSupplier!.supplierName,
-        "items": items
-            .map(
-              (i) => {
-                "productId": i.productId,
-                "productName": i.productName,
-                "quantity": i.quantity,
-                "rate": i.rate,
-                "amount": i.amount,
-                "unit": i.unit,
-                "notes": i.notes,
-              },
-            )
-            .toList(),
-        "subtotal": subtotal,
-        "gstPercentage": gstPercentage,
-        "gstAmount": gstAmount,
-        "advancePayment": advancePayment,
-        "grandTotal": grandTotal,
-        "balanceDue": balanceDue,
-        "status": targetStatus,
-        "notes": notesController.text.trim(),
-        "deliveryNote": deliveryNoteController.text.trim(),
-        "purchaseDate": purchaseDate.toIso8601String(),
-        "deliveryDate": deliveryDate?.toIso8601String(),
-      };
+     final orderPayload = {
+  //========================
+  // Purchase Information
+  //========================
 
+  "purchaseNumber": purchaseNumber,
+
+  //========================
+  // Supplier Snapshot
+  //========================
+
+  "supplierId": selectedSupplier!.id,
+  "supplierName": selectedSupplier!.supplierName,
+  "contactPerson": selectedSupplier!.contactPerson,
+  "phone": selectedSupplier!.phone,
+  "email": selectedSupplier!.email,
+  "gstNumber": selectedSupplier!.gstNumber,
+  "address": selectedSupplier!.address,
+  "city": selectedSupplier!.city,
+  "state": selectedSupplier!.state,
+  "pincode": selectedSupplier!.pincode,
+  "paymentTerms": selectedSupplier!.paymentTerms,
+
+  //========================
+  // Dates
+  //========================
+
+  "purchaseDate": purchaseDate.toIso8601String(),
+  "deliveryDate": deliveryDate?.toIso8601String(),
+
+  //========================
+  // Products
+  //========================
+
+  "items": items.map((i) {
+    return {
+      "productId": i.productId,
+      "productName": i.productName,
+      "sku": i.sku,
+      "unit": i.unit,
+      "quantity": i.quantity,
+      "rate": i.rate,
+      "amount": i.amount,
+      "notes": i.notes ?? "",
+    };
+  }).toList(),
+
+  //========================
+  // Order Notes
+  //========================
+
+  "notes": notesController.text.trim(),
+
+  //========================
+  // Financial Summary
+  //========================
+
+  "subtotal": subtotal,
+  "discount": 0,
+  "gst": gstAmount,
+  "transportCharges": 0,
+  "advancePayment": advancePayment,
+  "balanceDue": balanceDue,
+  "totalAmount": grandTotal,
+
+  //========================
+  // Status
+  //========================
+
+  "paymentStatus":
+      advancePayment >= grandTotal
+          ? "Paid"
+          : advancePayment > 0
+              ? "Partial"
+              : "Pending",
+
+  "status": targetStatus,
+};
       await PurchaseService().createPurchase(orderPayload);
       _showSnackBar(
         "Purchase successfully logged as $targetStatus!",
@@ -617,7 +664,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
-                  Icons.local_shipping_outlined,
+                  Icons.sticky_note_2_outlined,
                   size: 26,
                   color: Color(0xFF0F766E),
                 ),
@@ -1220,7 +1267,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: deliveryNoteController,
+  controller: notesController,
             maxLines: 3,
             style: const TextStyle(fontSize: 14, color: Color(0xFF1B2559)),
             decoration: InputDecoration(

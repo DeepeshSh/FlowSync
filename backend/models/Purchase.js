@@ -8,12 +8,13 @@ const purchaseSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // Supplier Details
+    // Supplier Reference
     supplierId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Supplier",
     },
 
+    // Supplier Snapshot Details
     supplierName: {
       type: String,
       required: true,
@@ -29,12 +30,42 @@ const purchaseSchema = new mongoose.Schema(
       default: "",
     },
 
+    email: {
+      type: String,
+      default: "",
+    },
+
+    gstNumber: {
+      type: String,
+      default: "",
+    },
+
+    address: {
+      type: String,
+      default: "",
+    },
+
+    city: {
+      type: String,
+      default: "",
+    },
+
+    state: {
+      type: String,
+      default: "",
+    },
+
+    pincode: {
+      type: String,
+      default: "",
+    },
+
     paymentTerms: {
       type: String,
       default: "30 Days",
     },
 
-    // Dates
+    // Purchase Dates
     purchaseDate: {
       type: Date,
       default: Date.now,
@@ -44,7 +75,7 @@ const purchaseSchema = new mongoose.Schema(
       type: Date,
     },
 
-    // Products
+    // Purchased Products
     items: [
       {
         productId: {
@@ -85,7 +116,6 @@ const purchaseSchema = new mongoose.Schema(
           default: 0,
         },
 
-        // FIXED: Added notes field support to nested purchase order lines
         notes: {
           type: String,
           default: "",
@@ -93,13 +123,13 @@ const purchaseSchema = new mongoose.Schema(
       },
     ],
 
-    // Global Order Notes
+    // Order Notes
     notes: {
       type: String,
       default: "",
     },
 
-    // Summary Financials
+    // Financial Summary
     subtotal: {
       type: Number,
       default: 0,
@@ -136,16 +166,24 @@ const purchaseSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // Status Matrices
+    // Purchase Status
     paymentStatus: {
       type: String,
-      enum: ["Pending", "Partial", "Paid"],
+      enum: [
+        "Pending",
+        "Partial",
+        "Paid",
+      ],
       default: "Pending",
     },
 
     status: {
       type: String,
-      enum: ["Draft", "Pending", "Confirmed"], // Added 'Pending' if currentStatus switches to it on UI
+      enum: [
+        "Draft",
+        "Pending",
+        "Confirmed",
+      ],
       default: "Draft",
     },
   },
@@ -154,4 +192,7 @@ const purchaseSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Purchase", purchaseSchema);
+module.exports = mongoose.model(
+  "Purchase",
+  purchaseSchema
+);

@@ -37,7 +37,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   final searchController = TextEditingController();
   final TextEditingController advancePaymentController =
       TextEditingController();
-  final deliveryNoteController = TextEditingController();
+  
 
   double gstPercentage = 18.0;
   double advancePayment = 0.0;
@@ -66,7 +66,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   @override
   void dispose() {
     notesController.dispose();
-    deliveryNoteController.dispose();
+
     contactPersonController.dispose();
     phoneController.dispose();
     paymentTermsController.dispose();
@@ -217,49 +217,116 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   }
 
   Future<void> _submitSalesOrder(String targetStatus) async {
-    if (selectedCustomer == null) {
-      _showSnackBar(
-        "Please select a customer to proceed.",
-        Colors.orange,
-      );
-      return;
-    }
-    if (items.isEmpty) {
-      _showSnackBar(
-        "Your shopping cart is empty. Add items first.",
-        Colors.orange,
-      );
-      return;
-    }
-
-    _updateState(() => isSaving = true);
-
-    try {
-    await SaleService().createSale(
-  saleNumber: saleNumber,
-  customerName: selectedCustomer!.customerName,
-  items: items.map((e) => e.toJson()).toList(), // Maps to JSON structures
-  totalAmount: grandTotal,
-  paymentStatus: targetStatus,
-);
-
-    
-
-      _showSnackBar(
-        "Sales order successfully logged as $targetStatus!",
-        Colors.green,
-      );
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      _showSnackBar("Order Submission Failed: ${e.toString()}", Colors.red);
-    } finally {
-      _updateState(() => isSaving = false);
-    }
+  if (selectedCustomer == null) {
+    _showSnackBar(
+      "Please select a customer to proceed.",
+      Colors.orange,
+    );
+    return;
   }
 
-  // ==========================================
-  // WIDGET TEMPLATE FUNCTIONS
-  // ==========================================
+  if (items.isEmpty) {
+    _showSnackBar(
+      "Your shopping cart is empty. Add items first.",
+      Colors.orange,
+    );
+    return;
+  }
+
+  _updateState(() => isSaving = true);
+
+  try {
+    final orderPayload = {
+      //=========================================
+      // Sale Information
+      //=========================================
+
+      "saleNumber": saleNumber,
+
+      //=========================================
+      // Customer Snapshot
+      //=========================================
+
+      "customerId": selectedCustomer!.id,
+      "customerName": selectedCustomer!.customerName,
+      "contactPerson": selectedCustomer!.contactPerson,
+      "phone": selectedCustomer!.phone,
+      "email": selectedCustomer!.email,
+      "gstNumber": selectedCustomer!.gstNumber,
+      "address": selectedCustomer!.address,
+      "city": selectedCustomer!.city,
+      "state": selectedCustomer!.state,
+      "pincode": selectedCustomer!.pincode,
+
+      //=========================================
+      // Dates
+      //=========================================
+
+      "saleDate": saleDate.toIso8601String(),
+
+      //=========================================
+      // Products
+      //=========================================
+
+      "items": items.map((item) {
+        return {
+          "productId": item.productId,
+          "productName": item.productName,
+          "quantity": item.quantity,
+          "sellingPrice": item.rate,
+          "total": item.amount,
+          "notes": item.notes ?? "",
+        };
+      }).toList(),
+
+      //=========================================
+      // Sale Notes
+      //=========================================
+
+      "notes": notesController.text.trim(),
+
+      //=========================================
+      // Financial Summary
+      //=========================================
+
+      "subtotal": subtotal,
+      "discount": 0.0,
+      "gst": gstAmount,
+      "transportCharges": 0.0,
+      "advancePayment": advancePayment,
+      "balanceDue": balanceDue,
+      "totalAmount": grandTotal,
+
+      //=========================================
+      // Payment Status
+      //=========================================
+
+      "paymentStatus": advancePayment >= grandTotal
+          ? "Paid"
+          : advancePayment > 0
+              ? "Partially Paid"
+              : "Pending",
+    };
+
+    await SaleService().createSale(orderPayload);
+
+    _showSnackBar(
+      "Sales order successfully logged!",
+      Colors.green,
+    );
+
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
+  } catch (e) {
+    _showSnackBar(
+      "Order Submission Failed: ${e.toString()}",
+      Colors.red,
+    );
+  } finally {
+    _updateState(() => isSaving = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1288,7 +1355,7 @@ void _showCustomPriceDialog(int index, double currentRate) {
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: deliveryNoteController,
+           controller: notesController,
             maxLines: 3,
             style: const TextStyle(fontSize: 14, color: Color(0xFF1B2559)),
             decoration: InputDecoration(

@@ -378,7 +378,7 @@ class _SalesScreenState extends State<SalesScreen> {
                           final sale = filteredSales[index];
                           final bool isPaid = sale.paymentStatus == "Paid";
                           final double calculatedAmount = _getSafeAmount(sale);
-                          final int productCount = sale.itemCount;
+                          final int productCount = sale.items.length;
 
                           return GestureDetector(
                             onTap: () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/sale_model.dart';
-
+import '../services/pdf_service.dart';
 class SaleDetailsScreen extends StatelessWidget {
   final Sale sale;
 
@@ -80,11 +80,24 @@ class SaleDetailsScreen extends StatelessWidget {
 
                   const Divider(),
 
+_buildInfoRow(
+  "Phone",
+  sale.phone,
+),
+
+const Divider(),
+
+_buildInfoRow(
+  "Email",
+  sale.email,
+),
+
+                  const Divider(),
+
                   _buildInfoRow(
-                    "Items",
-                    sale.itemCount
-                        .toString(),
-                  ),
+  "Total Products",
+  "${sale.items.length} Item(s)",
+),
 
                   const Divider(),
 
@@ -93,6 +106,12 @@ class SaleDetailsScreen extends StatelessWidget {
                     sale.paymentStatus,
                   ),
 
+const Divider(),
+
+_buildInfoRow(
+  "Balance Due",
+  "₹${sale.balanceDue.toStringAsFixed(2)}",
+),
                   const Divider(),
 
                   _buildInfoRow(
@@ -172,40 +191,111 @@ class SaleDetailsScreen extends StatelessWidget {
               height: 20,
             ),
 
-            SizedBox(
-              width:
-                  double.infinity,
+            Column(
+  children: [
 
-              height: 55,
-
-              child: ElevatedButton.icon(
-                onPressed: () {
-
-                  // Future:
-                  // Edit Sale
-                },
-
-                icon: const Icon(
-                  Icons.edit,
-                ),
-
-                label: const Text(
-                  "Edit Sale",
-                ),
-
-                style:
-                    ElevatedButton
-                        .styleFrom(
-                  backgroundColor:
-                      const Color(
-                    0xFF2F80FF,
+    SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          try {
+            await PdfService.instance
+                .previewSalesPdf(sale);
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                SnackBar(
+                  content: Text(
+                    e.toString(),
                   ),
-
-                  foregroundColor:
-                      Colors.white,
                 ),
-              ),
-            ),
+              );
+            }
+          }
+        },
+
+        icon: const Icon(
+          Icons.picture_as_pdf,
+        ),
+
+        label: const Text(
+          "View Invoice",
+        ),
+
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              const Color(0xFF2F80FF),
+
+          foregroundColor:
+              Colors.white,
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 12),
+
+    SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          try {
+            final file =
+                await PdfService.instance
+                    .generateSalesPdf(
+              sale,
+            );
+
+            await PdfService.instance
+                .sharePdf(file);
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                SnackBar(
+                  content: Text(
+                    e.toString(),
+                  ),
+                ),
+              );
+            }
+          }
+        },
+
+        icon: const Icon(
+          Icons.share,
+        ),
+
+        label: const Text(
+          "Share Invoice",
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 12),
+
+    SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: TextButton.icon(
+        onPressed: () {
+
+          // Future edit screen
+        },
+
+        icon: const Icon(
+          Icons.edit,
+        ),
+
+        label: const Text(
+          "Edit Sale",
+        ),
+      ),
+    ),
+  ],
+)
           ],
         ),
       ),

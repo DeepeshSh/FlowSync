@@ -10,8 +10,8 @@ class Product {
   final int stock;
   final int lowStockThreshold;
 
-  final double purchasePrice;
-  final double sellingPrice;
+   double purchasePrice;
+   double sellingPrice;
 
   final String categoryName;
   final String imageUrl;

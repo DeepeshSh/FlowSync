@@ -17,7 +17,7 @@ class InvoiceTemplate {
     final currency =
         NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: 'Rs.',
       decimalDigits: 2,
     );
 
@@ -25,12 +25,10 @@ class InvoiceTemplate {
         DateFormat("dd MMM yyyy");
 
     pdf.addPage(
-      pw.MultiPage(
-        pageTheme: _pageTheme(),
+    pw.MultiPage(
+  pageTheme: _pageTheme(),
 
-        margin: const pw.EdgeInsets.all(30),
-
-        build: (context) {
+  build: (context) {
           return [
 
           _buildHeader(

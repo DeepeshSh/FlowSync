@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/sale_model.dart';
+import '../models/purchase_model.dart';
 import '../services/pdf_service.dart';
 
-class SaleDetailsScreen extends StatelessWidget {
-  final Sale sale;
+class PurchaseDetailsScreen extends StatelessWidget {
+  final Purchase purchase;
 
-  const SaleDetailsScreen({
+  const PurchaseDetailsScreen({
     super.key,
-    required this.sale,
+    required this.purchase,
   });
 
   Color _getStatusColor(String status) {
@@ -18,6 +18,8 @@ class SaleDetailsScreen extends StatelessWidget {
         return const Color(0xFF3B82F6);
       case 'pending':
         return const Color(0xFFF59E0B);
+      case 'draft':
+        return const Color(0xFF64748B);
       default:
         return const Color(0xFF64748B);
     }
@@ -31,6 +33,8 @@ class SaleDetailsScreen extends StatelessWidget {
         return const Color(0xFFEFF6FF);
       case 'pending':
         return const Color(0xFFFFF7ED);
+      case 'draft':
+        return const Color(0xFFF1F5F9);
       default:
         return const Color(0xFFF1F5F9);
     }
@@ -39,8 +43,14 @@ class SaleDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color primaryDark = Color(0xFF1B2559);
-    final Color statusColor = _getStatusColor(sale.paymentStatus);
-    final Color statusBgColor = _getStatusBgColor(sale.paymentStatus);
+    final String status = purchase.paymentStatus ?? "Pending";
+    final Color statusColor = _getStatusColor(status);
+    final Color statusBgColor = _getStatusBgColor(status);
+
+    int productCount = 1;
+    try {
+      productCount = (purchase as dynamic).items.length;
+    } catch (_) {}
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FC),
@@ -56,7 +66,7 @@ class SaleDetailsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Sale Details",
+          "Purchase Details",
           style: TextStyle(
             color: primaryDark,
             fontWeight: FontWeight.bold,
@@ -89,8 +99,8 @@ class SaleDetailsScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildInfoRow(
-                    "Invoice Number",
-                    sale.saleNumber,
+                    "PO Number",
+                    purchase.purchaseNumber,
                     valueStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -100,30 +110,16 @@ class SaleDetailsScreen extends StatelessWidget {
                   ),
                   const Divider(height: 24, color: Color(0xFFF1F5F9)),
                   _buildInfoRow(
-                    "Customer",
-                    sale.customerName,
+                    "Supplier",
+                    purchase.supplierName,
                   ),
-                  if (sale.phone.isNotEmpty) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildInfoRow(
-                      "Phone",
-                      sale.phone,
-                    ),
-                  ],
-                  if (sale.email.isNotEmpty) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildInfoRow(
-                      "Email",
-                      sale.email,
-                    ),
-                  ],
                   const Divider(height: 24, color: Color(0xFFF1F5F9)),
                   _buildInfoRow(
-                    "Total Products",
-                    "${sale.items.length} Item(s)",
+                    "Total Items",
+                    "$productCount Product(s)",
                   ),
                   const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                  // Payment Status with Badge
+                  // Payment Status Badge
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
@@ -150,7 +146,7 @@ class SaleDetailsScreen extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            sale.paymentStatus,
+                            status,
                             style: TextStyle(
                               color: statusColor,
                               fontSize: 12,
@@ -161,22 +157,10 @@ class SaleDetailsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (sale.balanceDue > 0) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildInfoRow(
-                      "Balance Due",
-                      "₹${sale.balanceDue.toStringAsFixed(2)}",
-                      valueStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFFEA580C),
-                      ),
-                    ),
-                  ],
                   const Divider(height: 24, color: Color(0xFFF1F5F9)),
                   _buildInfoRow(
-                    "Date",
-                    "${sale.saleDate.day}/${sale.saleDate.month}/${sale.saleDate.year}",
+                    "Purchase Date",
+                    "${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
                   ),
                 ],
               ),
@@ -203,7 +187,7 @@ class SaleDetailsScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    "Total Amount",
+                    "Total Purchase Outflow",
                     style: TextStyle(
                       color: Color(0xFF64748B),
                       fontSize: 14,
@@ -212,7 +196,7 @@ class SaleDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "₹${sale.totalAmount.toStringAsFixed(2)}",
+                    "₹${purchase.totalAmount.toStringAsFixed(2)}",
                     style: const TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -225,7 +209,7 @@ class SaleDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // --- ACTION BUTTONS (Edit Sale Removed) ---
+            // --- ACTION BUTTONS ---
             Column(
               children: [
                 SizedBox(
@@ -234,7 +218,7 @@ class SaleDetailsScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       try {
-                        await PdfService.instance.previewSalesPdf(sale);
+                        await PdfService.instance.previewPurchasePdf(purchase);
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -251,7 +235,7 @@ class SaleDetailsScreen extends StatelessWidget {
                       size: 20,
                     ),
                     label: const Text(
-                      "View Invoice",
+                      "View Purchase Order",
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -274,7 +258,7 @@ class SaleDetailsScreen extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       try {
-                        final file = await PdfService.instance.generateSalesPdf(sale);
+                        final file = await PdfService.instance.generatePurchasePdf(purchase);
                         await PdfService.instance.sharePdf(file);
                       } catch (e) {
                         if (context.mounted) {
@@ -292,7 +276,7 @@ class SaleDetailsScreen extends StatelessWidget {
                       size: 20,
                     ),
                     label: const Text(
-                      "Share Invoice",
+                      "Share Purchase Order",
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,

@@ -19,7 +19,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   // STATE FLAGS
   bool isLoading = true;
   bool isSaving = false;
-  String currentStatus = "Draft";
+  String currentStatus = "Pending";
 
   // DATA STORAGE
   List<Product> products = [];
@@ -38,9 +38,12 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   final searchController = TextEditingController();
   final TextEditingController advancePaymentController =
       TextEditingController();
+  final TextEditingController transportChargesController =
+      TextEditingController();
 
   double gstPercentage = 18.0;
   double advancePayment = 0.0;
+  double transportCharges = 0.0;
   int? expandedIndex; // Keeps track of which product card is tapped open
 
   // DATES & IDENTIFIERS
@@ -51,9 +54,9 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   // FINANCIAL GETTERS
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.amount);
   double get gstAmount => subtotal * (gstPercentage / 100);
-  double get grandTotal => subtotal + gstAmount;
+  double get grandTotal => subtotal + gstAmount + transportCharges;
   double get balanceDue =>
-      grandTotal - advancePayment >= 0 ? grandTotal - advancePayment : 0;
+      grandTotal - advancePayment >= 0 ? grandTotal - advancePayment : 0.0;
 
   @override
   void initState() {
@@ -66,12 +69,12 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   @override
   void dispose() {
     notesController.dispose();
-
     contactPersonController.dispose();
     phoneController.dispose();
     paymentTermsController.dispose();
     searchController.dispose();
     advancePaymentController.dispose();
+    transportChargesController.dispose();
     super.dispose();
   }
 
@@ -235,84 +238,49 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     _updateState(() => isSaving = true);
 
     try {
-     final orderPayload = {
-  //========================
-  // Purchase Information
-  //========================
+      final orderPayload = {
+        "purchaseNumber": purchaseNumber,
+        "supplierId": selectedSupplier!.id,
+        "supplierName": selectedSupplier!.supplierName,
+        "contactPerson": selectedSupplier!.contactPerson,
+        "phone": selectedSupplier!.phone,
+        "email": selectedSupplier!.email,
+        "gstNumber": selectedSupplier!.gstNumber,
+        "address": selectedSupplier!.address,
+        "city": selectedSupplier!.city,
+        "state": selectedSupplier!.state,
+        "pincode": selectedSupplier!.pincode,
+        "paymentTerms": selectedSupplier!.paymentTerms,
+        "purchaseDate": purchaseDate.toIso8601String(),
+        "deliveryDate": deliveryDate?.toIso8601String(),
+        "items": items.map((i) {
+          return {
+            "productId": i.productId,
+            "productName": i.productName,
+            "sku": i.sku,
+            "unit": i.unit,
+            "quantity": i.quantity,
+            "rate": i.rate,
+            "amount": i.amount,
+            "notes": i.notes ?? "",
+          };
+        }).toList(),
+        "notes": notesController.text.trim(),
+        "subtotal": subtotal,
+        "discount": 0,
+        "gst": gstAmount,
+        "transportCharges": transportCharges,
+        "advancePayment": advancePayment,
+        "balanceDue": balanceDue,
+        "totalAmount": grandTotal,
+        "paymentStatus": advancePayment >= grandTotal
+            ? "Paid"
+            : advancePayment > 0
+                ? "Partial"
+                : "Pending",
+        "status": targetStatus,
+      };
 
-  "purchaseNumber": purchaseNumber,
-
-  //========================
-  // Supplier Snapshot
-  //========================
-
-  "supplierId": selectedSupplier!.id,
-  "supplierName": selectedSupplier!.supplierName,
-  "contactPerson": selectedSupplier!.contactPerson,
-  "phone": selectedSupplier!.phone,
-  "email": selectedSupplier!.email,
-  "gstNumber": selectedSupplier!.gstNumber,
-  "address": selectedSupplier!.address,
-  "city": selectedSupplier!.city,
-  "state": selectedSupplier!.state,
-  "pincode": selectedSupplier!.pincode,
-  "paymentTerms": selectedSupplier!.paymentTerms,
-
-  //========================
-  // Dates
-  //========================
-
-  "purchaseDate": purchaseDate.toIso8601String(),
-  "deliveryDate": deliveryDate?.toIso8601String(),
-
-  //========================
-  // Products
-  //========================
-
-  "items": items.map((i) {
-    return {
-      "productId": i.productId,
-      "productName": i.productName,
-      "sku": i.sku,
-      "unit": i.unit,
-      "quantity": i.quantity,
-      "rate": i.rate,
-      "amount": i.amount,
-      "notes": i.notes ?? "",
-    };
-  }).toList(),
-
-  //========================
-  // Order Notes
-  //========================
-
-  "notes": notesController.text.trim(),
-
-  //========================
-  // Financial Summary
-  //========================
-
-  "subtotal": subtotal,
-  "discount": 0,
-  "gst": gstAmount,
-  "transportCharges": 0,
-  "advancePayment": advancePayment,
-  "balanceDue": balanceDue,
-  "totalAmount": grandTotal,
-
-  //========================
-  // Status
-  //========================
-
-  "paymentStatus":
-      advancePayment >= grandTotal
-          ? "Paid"
-          : advancePayment > 0
-              ? "Partial"
-              : "Pending",
-
-  "status": targetStatus,
-};
       await PurchaseService().createPurchase(orderPayload);
       _showSnackBar(
         "Purchase successfully logged as $targetStatus!",
@@ -446,11 +414,6 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    // Calculate the final balance due after adding GST and subtracting advance payment
-    final finalBillAmount = grandTotal - advancePayment >= 0
-        ? grandTotal - advancePayment
-        : 0.0;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 25),
       decoration: const BoxDecoration(
@@ -466,8 +429,71 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSummaryRow("Total Amount (Excl. GST)", subtotal),
+            _buildSummaryRow("Subtotal (Excl. GST)", subtotal),
             _buildSummaryRow("GST ($gstPercentage%)", gstAmount),
+            
+            // Transportation Charges Editable Input
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Transportation Charges",
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                  SizedBox(
+                    width: 110,
+                    height: 32,
+                    child: TextFormField(
+                      controller: transportChargesController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1B2559),
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '₹',
+                        prefixStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1B2559),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 0,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2F80FF),
+                          ),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        _updateState(() {
+                          transportCharges = double.tryParse(val) ?? 0.0;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Advance Payment Editable Input
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -478,7 +504,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   SizedBox(
-                    width: 100,
+                    width: 110,
                     height: 32,
                     child: TextFormField(
                       controller: advancePaymentController,
@@ -527,6 +553,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                 ],
               ),
             ),
+
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Divider(height: 1, thickness: 1),
@@ -543,19 +570,30 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                         "Total Bill Amount",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "₹${finalBillAmount.toStringAsFixed(2)}",
+                        "₹${grandTotal.toStringAsFixed(2)}",
                         style: const TextStyle(
                           color: Color(0xFF1B2559),
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (advancePayment > 0) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          "Due: ₹${balanceDue.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1096,6 +1134,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                 ),
                 Row(
                   children: [
+                    // 1. ADD / EDIT NOTE
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () =>
@@ -1116,7 +1155,31 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
+
+                    // 2. EDIT PRICE BUTTON
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showCustomPriceDialog(
+                          index,
+                          item.rate,
+                          item.productId,
+                        ),
+                        icon: const Icon(Icons.edit_road_outlined, size: 18),
+                        label: const Text("Edit Price"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F9D94),
+                          side: const BorderSide(color: Color(0xFF0F9D94)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // 3. REMOVE ITEM BUTTON
                     IconButton(
                       onPressed: () {
                         removeItem(index);
@@ -1202,6 +1265,145 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
     );
   }
 
+  void _showCustomPriceDialog(
+      int index, double currentRate, String productId) {
+    final priceController =
+        TextEditingController(text: currentRate.toStringAsFixed(2));
+    bool updateMasterCatalog = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                "Modify Purchase Price",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2559),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: priceController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      hintText: "Enter manual rate per piece...",
+                      prefixText: "₹ ",
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF2F80FF)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    activeColor: const Color(0xFF0F9D94),
+                    title: const Text(
+                      "Update master product purchase price",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1B2559),
+                      ),
+                    ),
+                    subtitle: const Text(
+                      "Saves this price to master inventory for future orders",
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    value: updateMasterCatalog,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        updateMasterCatalog = val ?? false;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child:
+                      const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final newRate =
+                        double.tryParse(priceController.text.trim());
+                    if (newRate != null && newRate >= 0) {
+                      setState(() {
+                        items[index].rate = newRate;
+                        items[index].calculateAmount();
+                      });
+
+                      if (updateMasterCatalog) {
+                        try {
+                          final prodIndex = products.indexWhere(
+                              (p) => p.id == productId);
+                          if (prodIndex >= 0) {
+                            products[prodIndex].purchasePrice = newRate;
+                          }
+                         await ProductService().updatePurchasePrice(productId, newRate); {
+                           
+                         };
+                          _showSnackBar(
+                            "Master product purchase price updated!",
+                            Colors.green,
+                          );
+                        } catch (e) {
+                          _showSnackBar(
+                            "Failed to update master catalog: $e",
+                            Colors.orange,
+                          );
+                        }
+                      }
+
+                      if (context.mounted) Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please enter a valid amount"),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F9D94),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    "Update Price",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildDateTile(String label, DateTime? date, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -1267,7 +1469,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
-  controller: notesController,
+            controller: notesController,
             maxLines: 3,
             style: const TextStyle(fontSize: 14, color: Color(0xFF1B2559)),
             decoration: InputDecoration(

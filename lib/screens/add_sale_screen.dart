@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../models/product_model.dart';
 import '../models/customer_model.dart';
-import '../models/purchase_item_model.dart'; // Reusing your model for item list lines
+import '../models/purchase_item_model.dart'; // Reusing model for item list lines
 import '../services/product_service.dart';
 import '../services/customer_service.dart';
 import '../services/sale_service.dart';
@@ -35,12 +35,12 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   final phoneController = TextEditingController();
   final paymentTermsController = TextEditingController();
   final searchController = TextEditingController();
-  final TextEditingController advancePaymentController =
-      TextEditingController();
-  
+  final TextEditingController advancePaymentController = TextEditingController();
+  final TextEditingController transportChargesController = TextEditingController();
 
   double gstPercentage = 18.0;
   double advancePayment = 0.0;
+  double transportCharges = 0.0;
   int? expandedIndex; // Keeps track of which product card is tapped open
 
   // DATES & IDENTIFIERS
@@ -51,7 +51,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   // FINANCIAL GETTERS
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.amount);
   double get gstAmount => subtotal * (gstPercentage / 100);
-  double get grandTotal => subtotal + gstAmount;
+  double get grandTotal => subtotal + gstAmount + transportCharges;
   double get balanceDue =>
       grandTotal - advancePayment >= 0 ? grandTotal - advancePayment : 0;
 
@@ -66,12 +66,12 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   @override
   void dispose() {
     notesController.dispose();
-
     contactPersonController.dispose();
     phoneController.dispose();
     paymentTermsController.dispose();
     searchController.dispose();
     advancePaymentController.dispose();
+    transportChargesController.dispose();
     super.dispose();
   }
 
@@ -154,7 +154,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
           sku: selectedProduct.sku,
           unit: selectedProduct.unit.isEmpty ? "Pcs" : selectedProduct.unit,
           quantity: 1,
-          rate: selectedProduct.sellingPrice, // Updated to use selling price
+          rate: selectedProduct.sellingPrice,
           amount: selectedProduct.sellingPrice,
         );
         item.calculateAmount();
@@ -217,116 +217,82 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   }
 
   Future<void> _submitSalesOrder(String targetStatus) async {
-  if (selectedCustomer == null) {
-    _showSnackBar(
-      "Please select a customer to proceed.",
-      Colors.orange,
-    );
-    return;
-  }
-
-  if (items.isEmpty) {
-    _showSnackBar(
-      "Your shopping cart is empty. Add items first.",
-      Colors.orange,
-    );
-    return;
-  }
-
-  _updateState(() => isSaving = true);
-
-  try {
-    final orderPayload = {
-      //=========================================
-      // Sale Information
-      //=========================================
-
-      "saleNumber": saleNumber,
-
-      //=========================================
-      // Customer Snapshot
-      //=========================================
-
-      "customerId": selectedCustomer!.id,
-      "customerName": selectedCustomer!.customerName,
-      "contactPerson": selectedCustomer!.contactPerson,
-      "phone": selectedCustomer!.phone,
-      "email": selectedCustomer!.email,
-      "gstNumber": selectedCustomer!.gstNumber,
-      "address": selectedCustomer!.address,
-      "city": selectedCustomer!.city,
-      "state": selectedCustomer!.state,
-      "pincode": selectedCustomer!.pincode,
-
-      //=========================================
-      // Dates
-      //=========================================
-
-      "saleDate": saleDate.toIso8601String(),
-
-      //=========================================
-      // Products
-      //=========================================
-
-      "items": items.map((item) {
-        return {
-          "productId": item.productId,
-          "productName": item.productName,
-          "quantity": item.quantity,
-          "sellingPrice": item.rate,
-          "total": item.amount,
-          "notes": item.notes ?? "",
-        };
-      }).toList(),
-
-      //=========================================
-      // Sale Notes
-      //=========================================
-
-      "notes": notesController.text.trim(),
-
-      //=========================================
-      // Financial Summary
-      //=========================================
-
-      "subtotal": subtotal,
-      "discount": 0.0,
-      "gst": gstAmount,
-      "transportCharges": 0.0,
-      "advancePayment": advancePayment,
-      "balanceDue": balanceDue,
-      "totalAmount": grandTotal,
-
-      //=========================================
-      // Payment Status
-      //=========================================
-
-      "paymentStatus": advancePayment >= grandTotal
-          ? "Paid"
-          : advancePayment > 0
-              ? "Partially Paid"
-              : "Pending",
-    };
-
-    await SaleService().createSale(orderPayload);
-
-    _showSnackBar(
-      "Sales order successfully logged!",
-      Colors.green,
-    );
-
-    if (mounted) {
-      Navigator.pop(context, true);
+    if (selectedCustomer == null) {
+      _showSnackBar(
+        "Please select a customer to proceed.",
+        Colors.orange,
+      );
+      return;
     }
-  } catch (e) {
-    _showSnackBar(
-      "Order Submission Failed: ${e.toString()}",
-      Colors.red,
-    );
-  } finally {
-    _updateState(() => isSaving = false);
+
+    if (items.isEmpty) {
+      _showSnackBar(
+        "Your shopping cart is empty. Add items first.",
+        Colors.orange,
+      );
+      return;
+    }
+
+    _updateState(() => isSaving = true);
+
+    try {
+      final orderPayload = {
+        "saleNumber": saleNumber,
+        "customerId": selectedCustomer!.id,
+        "customerName": selectedCustomer!.customerName,
+        "contactPerson": selectedCustomer!.contactPerson,
+        "phone": selectedCustomer!.phone,
+        "email": selectedCustomer!.email,
+        "gstNumber": selectedCustomer!.gstNumber,
+        "address": selectedCustomer!.address,
+        "city": selectedCustomer!.city,
+        "state": selectedCustomer!.state,
+        "pincode": selectedCustomer!.pincode,
+        "saleDate": saleDate.toIso8601String(),
+        "items": items.map((item) {
+          return {
+            "productId": item.productId,
+            "productName": item.productName,
+            "quantity": item.quantity,
+            "sellingPrice": item.rate,
+            "total": item.amount,
+            "notes": item.notes ?? "",
+          };
+        }).toList(),
+        "notes": notesController.text.trim(),
+        "subtotal": subtotal,
+        "discount": 0.0,
+        "gst": gstAmount,
+        "transportCharges": transportCharges,
+        "advancePayment": advancePayment,
+        "balanceDue": balanceDue,
+        "totalAmount": grandTotal,
+        "paymentStatus": advancePayment >= grandTotal
+            ? "Paid"
+            : advancePayment > 0
+                ? "Partially Paid"
+                : "Pending",
+      };
+
+      await SaleService().createSale(orderPayload);
+
+      _showSnackBar(
+        "Sales order successfully logged!",
+        Colors.green,
+      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      _showSnackBar(
+        "Order Submission Failed: ${e.toString()}",
+        Colors.red,
+      );
+    } finally {
+      _updateState(() => isSaving = false);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -444,10 +410,6 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    final finalBillAmount = grandTotal - advancePayment >= 0
-        ? grandTotal - advancePayment
-        : 0.0;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 25),
       decoration: const BoxDecoration(
@@ -463,8 +425,71 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSummaryRow("Total Amount (Excl. GST)", subtotal),
+            _buildSummaryRow("Subtotal (Excl. GST)", subtotal),
             _buildSummaryRow("GST ($gstPercentage%)", gstAmount),
+            
+            // Transportation Charges Editable Input
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Transportation Charges",
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                  SizedBox(
+                    width: 110,
+                    height: 32,
+                    child: TextFormField(
+                      controller: transportChargesController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1B2559),
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '₹',
+                        prefixStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1B2559),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 0,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2F80FF),
+                          ),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        _updateState(() {
+                          transportCharges = double.tryParse(val) ?? 0.0;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Advance Payment Editable Input
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -475,7 +500,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   SizedBox(
-                    width: 100,
+                    width: 110,
                     height: 32,
                     child: TextFormField(
                       controller: advancePaymentController,
@@ -524,6 +549,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 ],
               ),
             ),
+            
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Divider(height: 1, thickness: 1),
@@ -540,19 +566,30 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         "Total Bill Amount",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "₹${finalBillAmount.toStringAsFixed(2)}",
+                        "₹${grandTotal.toStringAsFixed(2)}",
                         style: const TextStyle(
                           color: Color(0xFF1B2559),
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (advancePayment > 0) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          "Due: ₹${balanceDue.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1081,74 +1118,69 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                   ],
                 ),
               ),
-             if (isExpanded) ...[
-  const Padding(
-    padding: EdgeInsets.symmetric(vertical: 12),
-    child: Divider(
-      height: 1,
-      thickness: 1,
-      color: Color(0xFFEDF2F7),
-    ),
-  ),
-  Row(
-    children: [
-      // 1. ADD / EDIT NOTE BUTTON
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: () => _showAddNoteDialog(index, item.notes ?? ""),
-          icon: const Icon(Icons.edit_note, size: 18),
-          label: Text(
-            item.notes == null || item.notes!.isEmpty
-                ? "Add Note"
-                : "Edit Note",
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF2F80FF),
-            side: const BorderSide(color: Color(0xFF2F80FF)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-          ),
-        ),
-      ),
-      const SizedBox(width: 8),
-      
-      // 2. NEW CHANGE PRICE BUTTON
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: () => _showCustomPriceDialog(index, item.rate),
-          icon: const Icon(Icons.edit_road_outlined, size: 18), // A sleek edit icon
-          label: const Text("Edit Price"),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF0F9D94),
-            side: const BorderSide(color: Color(0xFF0F9D94)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-          ),
-        ),
-      ),
-      const SizedBox(width: 8),
-      
-      // 3. REMOVE ITEM BUTTON
-      IconButton(
-        onPressed: () {
-          removeItem(index);
-        },
-        icon: const Icon(Icons.delete_outline, color: Colors.red),
-        style: IconButton.styleFrom(
-          backgroundColor: Colors.red.shade50,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: const EdgeInsets.all(10),
-        ),
-      ),
-    ],
-  ),
-],
+              if (isExpanded) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFEDF2F7),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showAddNoteDialog(index, item.notes ?? ""),
+                        icon: const Icon(Icons.edit_note, size: 18),
+                        label: Text(
+                          item.notes == null || item.notes!.isEmpty
+                              ? "Add Note"
+                              : "Edit Note",
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2F80FF),
+                          side: const BorderSide(color: Color(0xFF2F80FF)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showCustomPriceDialog(index, item.rate),
+                        icon: const Icon(Icons.edit_road_outlined, size: 18),
+                        label: const Text("Edit Price"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F9D94),
+                          side: const BorderSide(color: Color(0xFF0F9D94)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () {
+                        removeItem(index);
+                      },
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.all(10),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         );
@@ -1218,77 +1250,77 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-void _showCustomPriceDialog(int index, double currentRate) {
-  final priceController = TextEditingController(text: currentRate.toStringAsFixed(2));
-  
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          "Modify Unit Price",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1B2559),
+  void _showCustomPriceDialog(int index, double currentRate) {
+    final priceController = TextEditingController(text: currentRate.toStringAsFixed(2));
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        content: TextFormField(
-          controller: priceController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: "Enter manual rate per piece...",
-            prefixText: "₹ ",
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+          title: const Text(
+            "Modify Unit Price",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1B2559),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newRate = double.tryParse(priceController.text.trim());
-              if (newRate != null && newRate >= 0) {
-                setState(() {
-                  items[index].rate = newRate;
-                  items[index].calculateAmount(); // Re-compute quantity * new rate
-                });
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please enter a valid amount")),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F9D94),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          content: TextFormField(
+            controller: priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: "Enter manual rate per piece...",
+              prefixText: "₹ ",
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF2F80FF)),
               ),
             ),
-            child: const Text(
-              "Update Price",
-              style: TextStyle(color: Colors.white),
-            ),
           ),
-        ],
-      );
-    },
-  );
-}
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newRate = double.tryParse(priceController.text.trim());
+                if (newRate != null && newRate >= 0) {
+                  setState(() {
+                    items[index].rate = newRate;
+                    items[index].calculateAmount();
+                  });
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please enter a valid amount")),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F9D94),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Update Price",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildDateTile(String label, DateTime? date, VoidCallback onTap) {
     return InkWell(
@@ -1355,7 +1387,7 @@ void _showCustomPriceDialog(int index, double currentRate) {
           ),
           const SizedBox(height: 12),
           TextField(
-           controller: notesController,
+            controller: notesController,
             maxLines: 3,
             style: const TextStyle(fontSize: 14, color: Color(0xFF1B2559)),
             decoration: InputDecoration(
@@ -1428,7 +1460,7 @@ void _showCustomPriceDialog(int index, double currentRate) {
                       "SKU: ${product.sku} | Unit: ${product.unit.isEmpty ? 'Pcs' : product.unit}",
                     ),
                     trailing: Text(
-                      "₹${product.sellingPrice}", // Configured with selling price
+                      "₹${product.sellingPrice}",
                       style: const TextStyle(
                         color: Color(0xFF0F9D94),
                         fontWeight: FontWeight.bold,

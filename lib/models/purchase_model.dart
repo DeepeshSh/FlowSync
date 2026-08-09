@@ -8,11 +8,11 @@ class Purchase {
   final String contactPerson;
   final String phone;
   final String email;
-final String gstNumber;
-final String address;
-final String city;
-final String state;
-final String pincode;
+  final String gstNumber;
+  final String address;
+  final String city;
+  final String state;
+  final String pincode;
   final String paymentTerms;
   final DateTime purchaseDate;
   final DateTime? deliveryDate;
@@ -36,11 +36,11 @@ final String pincode;
     required this.contactPerson,
     required this.phone,
     required this.email,
-required this.gstNumber,
-required this.address,
-required this.city,
-required this.state,
-required this.pincode,
+    required this.gstNumber,
+    required this.address,
+    required this.city,
+    required this.state,
+    required this.pincode,
     required this.paymentTerms,
     required this.purchaseDate,
     required this.deliveryDate,
@@ -58,46 +58,118 @@ required this.pincode,
   });
 
   factory Purchase.fromJson(Map<String, dynamic> json) {
+    String parseString(dynamic val, {String defaultKey = 'name'}) {
+      if (val == null) return "";
+      if (val is String) return val;
+      if (val is Map) {
+        return val[defaultKey]?.toString() ??
+            val['supplierName']?.toString() ??
+            val['name']?.toString() ??
+            val['_id']?.toString() ??
+            "";
+      }
+      return val.toString();
+    }
+
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
+    DateTime parseDate(dynamic val) {
+      if (val == null) return DateTime.now();
+      if (val is DateTime) return val;
+      return DateTime.tryParse(val.toString()) ?? DateTime.now();
+    }
+
+    DateTime? parseNullableDate(dynamic val) {
+      if (val == null) return null;
+      if (val is DateTime) return val;
+      return DateTime.tryParse(val.toString());
+    }
+
+    Map<String, dynamic>? supplierMap;
+    if (json["supplierId"] is Map) {
+      supplierMap = json["supplierId"] as Map<String, dynamic>;
+    }
+
+    final double parsedSubtotal = parseDouble(json["subtotal"]);
+    final double parsedGst = parseDouble(json["gst"]);
+    final double parsedTransport = parseDouble(json["transportCharges"]);
+    final double parsedAdvance = parseDouble(json["advancePayment"]);
+    final double parsedDue = parseDouble(json["balanceDue"]);
+
+    // Calculate total amount if backend returns 0
+    double rawTotal = parseDouble(json["totalAmount"]);
+    if (rawTotal <= 0) {
+      if (parsedDue > 0) {
+        rawTotal = parsedDue + parsedAdvance;
+      } else if (parsedSubtotal > 0) {
+        rawTotal = parsedSubtotal + parsedGst + parsedTransport;
+      }
+    }
+
+    // Extract paymentStatus
+    String rawPaymentStatus = parseString(json["paymentStatus"]);
+    if (rawPaymentStatus.isEmpty) {
+      rawPaymentStatus = "Pending";
+    }
+
+    // Parse list of PurchaseItem
+    List<PurchaseItem> parsedItems = [];
+    if (json["items"] is List) {
+      parsedItems = (json["items"] as List).map((e) {
+        if (e is Map<String, dynamic>) {
+          return PurchaseItem.fromJson(e);
+        } else if (e is Map) {
+          return PurchaseItem.fromJson(Map<String, dynamic>.from(e));
+        }
+        return PurchaseItem(
+          productId: "",
+          productName: "",
+          sku: "",
+          unit: "Pcs",
+          quantity: 0,
+          rate: 0.0,
+          amount: 0.0,
+        );
+      }).toList();
+    }
+
     return Purchase(
-      id: json["_id"] ?? json["id"] ?? "", // Fallback check if server sends id or _id
-      purchaseNumber: json["purchaseNumber"] ?? "",
-      supplierId: json["supplierId"] ?? "",
-      supplierName: json["supplierName"] ?? "",
-      contactPerson: json["contactPerson"] ?? "",
-      phone: json["phone"] ?? "",
-      email: json["email"] ?? "",
-gstNumber: json["gstNumber"] ?? "",
-address: json["address"] ?? "",
-city: json["city"] ?? "",
-state: json["state"] ?? "",
-pincode: json["pincode"] ?? "",
-      paymentTerms: json["paymentTerms"] ?? "",
-      purchaseDate: json["purchaseDate"] != null
-          ? DateTime.parse(json["purchaseDate"])
-          : DateTime.now(),
-      deliveryDate: json["deliveryDate"] != null
-          ? DateTime.parse(json["deliveryDate"])
-          : null,
-      items: json["items"] != null
-          ? (json["items"] as List)
-              .map((e) => PurchaseItem.fromJson(e))
-              .toList()
-          : [],
-      notes: json["notes"] ?? "",
-      subtotal: (json["subtotal"] as num?)?.toDouble() ?? 0.0,
-      discount: (json["discount"] as num?)?.toDouble() ?? 0.0,
-      gst: (json["gst"] as num?)?.toDouble() ?? 0.0,
-      transportCharges: (json["transportCharges"] as num?)?.toDouble() ?? 0.0,
-      advancePayment: (json["advancePayment"] as num?)?.toDouble() ?? 0.0,
-      balanceDue: (json["balanceDue"] as num?)?.toDouble() ?? 0.0,
-      totalAmount: (json["totalAmount"] as num?)?.toDouble() ?? 0.0,
-      paymentStatus: json["paymentStatus"] ?? "Pending",
-      status: json["status"] ?? "Draft",
+      id: parseString(json["_id"] ?? json["id"]),
+      purchaseNumber: parseString(json["purchaseNumber"]),
+      supplierId: parseString(json["supplierId"], defaultKey: '_id'),
+      supplierName: parseString(
+        json["supplierName"] ?? supplierMap?["supplierName"],
+        defaultKey: 'supplierName',
+      ),
+      contactPerson: parseString(json["contactPerson"] ?? supplierMap?["contactPerson"]),
+      phone: parseString(json["phone"] ?? supplierMap?["phone"]),
+      email: parseString(json["email"] ?? supplierMap?["email"]),
+      gstNumber: parseString(json["gstNumber"] ?? supplierMap?["gstNumber"]),
+      address: parseString(json["address"] ?? supplierMap?["address"]),
+      city: parseString(json["city"] ?? supplierMap?["city"]),
+      state: parseString(json["state"] ?? supplierMap?["state"]),
+      pincode: parseString(json["pincode"] ?? supplierMap?["pincode"]),
+      paymentTerms: parseString(json["paymentTerms"]),
+      purchaseDate: parseDate(json["purchaseDate"]),
+      deliveryDate: parseNullableDate(json["deliveryDate"]),
+      items: parsedItems,
+      notes: parseString(json["notes"]),
+      subtotal: parsedSubtotal,
+      discount: parseDouble(json["discount"]),
+      gst: parsedGst,
+      transportCharges: parsedTransport,
+      advancePayment: parsedAdvance,
+      balanceDue: parsedDue,
+      totalAmount: rawTotal,
+      paymentStatus: rawPaymentStatus,
+      status: parseString(json["status"]).isEmpty ? rawPaymentStatus : parseString(json["status"]),
     );
   }
 
-  /// Converts the model instance back into a JSON Map representation 
-  /// for easy payload integration with your PurchaseService POST/PUT calls.
   Map<String, dynamic> toJson() {
     return {
       if (id.isNotEmpty) "_id": id,
@@ -107,15 +179,15 @@ pincode: json["pincode"] ?? "",
       "contactPerson": contactPerson,
       "phone": phone,
       "email": email,
-"gstNumber": gstNumber,
-"address": address,
-"city": city,
-"state": state,
-"pincode": pincode,
+      "gstNumber": gstNumber,
+      "address": address,
+      "city": city,
+      "state": state,
+      "pincode": pincode,
       "paymentTerms": paymentTerms,
       "purchaseDate": purchaseDate.toIso8601String(),
       "deliveryDate": deliveryDate?.toIso8601String(),
-      "items": items.map((item) => item.toJson()).toList(), // Make sure PurchaseItem also has toJson()
+      "items": items.map((item) => item.toJson()).toList(),
       "notes": notes,
       "subtotal": subtotal,
       "discount": discount,

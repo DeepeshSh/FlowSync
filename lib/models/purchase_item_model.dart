@@ -6,7 +6,7 @@ class PurchaseItem {
   int quantity;
   double rate;
   double amount;
-  String? notes; // FIXED: Added to match line-item notes in UI and Backend Schema
+  String? notes;
 
   PurchaseItem({
     required this.productId,
@@ -21,15 +21,15 @@ class PurchaseItem {
 
   factory PurchaseItem.fromJson(Map<String, dynamic> json) {
     return PurchaseItem(
-      productId: json["productId"] ?? "",
-      productName: json["productName"] ?? "",
-      sku: json["sku"] ?? "",
-      unit: json["unit"] ?? "Pcs",
-      quantity: json["quantity"] ?? 0,
-      // FIXED: Enhanced type safety parsing for numeric floating data types
+      productId: json["productId"]?.toString() ?? "",
+      productName: json["productName"]?.toString() ?? "",
+      sku: json["sku"]?.toString() ?? "",
+      unit: json["unit"]?.toString() ?? "Pcs",
+      // FIXED: Safely convert double/num quantities to int to avoid TypeErrors
+      quantity: (json["quantity"] as num?)?.toInt() ?? 0,
       rate: (json["rate"] as num?)?.toDouble() ?? 0.0,
       amount: (json["amount"] as num?)?.toDouble() ?? 0.0,
-      notes: json["notes"],
+      notes: json["notes"]?.toString(),
     );
   }
 

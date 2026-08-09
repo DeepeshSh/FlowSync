@@ -177,14 +177,15 @@ const purchaseSchema = new mongoose.Schema(
       default: "Pending",
     },
 
-    status: {
+    paymentStatus: {
       type: String,
       enum: [
-        "Draft",
         "Pending",
-        "Confirmed",
+        "Partial",
+        "Partially Paid",
+        "Paid",
       ],
-      default: "Draft",
+      default: "Pending",
     },
   },
   {

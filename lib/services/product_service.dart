@@ -182,6 +182,20 @@ class ProductService {
     }
   }
 
+// UPDATE PURCHASE PRICE (PATCH)
+Future<void> updatePurchasePrice(String id, double purchasePrice) async {
+  try {
+    await dio.patch(
+      "${ApiConfig.baseUrl}/products/$id",
+      data: {
+        "purchasePrice": purchasePrice,
+      },
+    );
+  } on DioException catch (e) {
+    print("PRICE UPDATE ERROR : ${e.response?.data}");
+    rethrow;
+  }
+}
   // DELETE PRODUCT
   Future<void> deleteProduct(String id) async {
     await dio.delete(

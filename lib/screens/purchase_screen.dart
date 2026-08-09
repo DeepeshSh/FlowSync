@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/purchase_model.dart';
 import '../services/purchase_service.dart';
 import 'add_purchase_screen.dart';
+import 'purchase_details_screen.dart';
 
 class PurchaseScreen extends StatefulWidget {
   const PurchaseScreen({super.key});
@@ -17,7 +18,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   final searchController = TextEditingController();
   
   String selectedTab = "All"; 
-  final List<String> filterTabs = ["All", "Paid", "Pending", "Draft"];
+  final List<String> filterTabs = ["All", "Paid", "Partially Paid", "Pending", "Draft"];
   DateTimeRange? selectedDateRange;
 
   @override
@@ -26,147 +27,76 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     loadPurchases();
   }
 
-  // Deep extraction function to safely fetch the amount fields directly from the original payload keys
+  // Safely fetch amount
+  // Safely calculate total amount even if backend returned totalAmount: 0
   double _getSafeAmount(Purchase purchase) {
-    try {
-      final dynamic raw = purchase;
-      Map<dynamic, dynamic>? rawMap;
-
-      // Try to extract raw Map representation via serialization methods if available
-      if (raw is Map) {
-        rawMap = raw;
-      } else {
-        try {
-          rawMap = raw.toJson() as Map<dynamic, dynamic>;
-        } catch (_) {
-          try {
-            rawMap = raw.toMap() as Map<dynamic, dynamic>;
-          } catch (_) {}
-        }
-      }
-
-      if (rawMap != null) {
-        // Updated priority checking keys matching AddPurchaseScreen submission payload and total bills
-        final keysToTry = ['grandTotal', 'grand_total', 'total_bill_amount', 'totalBillAmount', 'totalAmount', 'total_amount', 'subtotal', 'amount'];
-        for (final key in keysToTry) {
-          if (rawMap[key] != null) {
-            final parsedValue = double.tryParse(rawMap[key].toString());
-            if (parsedValue != null && parsedValue > 0) {
-              return parsedValue;
-            }
-          }
-        }
-      }
-      
-      // Property level reflection probing
-      try {
-        if (raw.grandTotal != null) return double.tryParse(raw.grandTotal.toString()) ?? 0.0;
-      } catch (_) {}
-      try {
-        if (raw.totalAmount != null) return double.tryParse(raw.totalAmount.toString()) ?? 0.0;
-      } catch (_) {}
-      
-      // Final fallback to model property
-      return double.tryParse(purchase.totalAmount.toString()) ?? 0.0;
-    } catch (_) {
-      return 0.0;
-    }
+    if (purchase.totalAmount > 0) return purchase.totalAmount;
+    if (purchase.balanceDue > 0) return purchase.balanceDue + purchase.advancePayment;
+    if (purchase.subtotal > 0) return purchase.subtotal + purchase.gst + purchase.transportCharges;
+    return 0.0;
   }
 
-  // Deep extraction function to normalize status dynamically into explicit categories: Paid, Pending, Draft
-// Deep extraction function to normalize status dynamically into explicit categories: Paid, Pending, Draft
+  // Accurately determine status by prioritizing paymentStatus
   String _getSafeStatus(Purchase purchase) {
     try {
-      final dynamic raw = purchase;
-      String extractedStatus = "";
-      Map<dynamic, dynamic>? rawMap;
+      final String payment = purchase.paymentStatus.trim().toLowerCase();
+      final String orderStatus = purchase.status.trim().toLowerCase();
 
-      // Extract raw representation maps safely 
-      if (raw is Map) {
-        rawMap = raw;
-      } else {
-        try {
-          rawMap = raw.toJson() as Map<dynamic, dynamic>;
-        } catch (_) {
-          try {
-            rawMap = raw.toMap() as Map<dynamic, dynamic>;
-          } catch (_) {}
-        }
+      // 1. Direct matches from paymentStatus
+      if (payment == "paid") return "Paid";
+      if (payment == "partially paid" || payment == "partial") return "Partially Paid";
+      if (payment == "pending") return "Pending";
+
+      // 2. Financial calculation overrides
+      final double total = _getSafeAmount(purchase);
+      final double advance = purchase.advancePayment;
+      final double due = purchase.balanceDue;
+
+      if (total > 0) {
+        if (due <= 0 || advance >= total) return "Paid";
+        if (advance > 0) return "Partially Paid";
+        return "Pending";
       }
 
-      if (rawMap != null) {
-        if (rawMap['status'] != null) extractedStatus = rawMap['status'].toString();
-        if (extractedStatus.isEmpty && rawMap['paymentStatus'] != null) extractedStatus = rawMap['paymentStatus'].toString();
-        if (extractedStatus.isEmpty && rawMap['payment_status'] != null) extractedStatus = rawMap['payment_status'].toString();
-      }
-
-      if (extractedStatus.isEmpty) {
-        try {
-          if (raw.status != null) extractedStatus = raw.status.toString();
-        } catch (_) {}
-        try {
-          if (raw.paymentStatus != null) extractedStatus = raw.paymentStatus.toString();
-        } catch (_) {}
-      }
-      
-      if (extractedStatus.isEmpty) {
-        extractedStatus = purchase.paymentStatus ?? "";
-      }
-
-      final cleanStatus = extractedStatus.trim().toLowerCase();
-
-      // 1. DRAFT CONDITION CHECK (Check first so financial evaluation doesn't overwrite it)
-      if (cleanStatus == "draft") {
+      // 3. Return Draft ONLY if explicitly marked as Draft and no payment was made
+      if ((payment == "draft" || orderStatus == "draft") && advance == 0 && due == 0) {
         return "Draft";
       }
 
-      // 2. FINANCIAL BALANCE EVALUATION
-      double totalBillAmount = _getSafeAmount(purchase);
-      double dueAmount = 0.0; 
-
-      if (rawMap != null) {
-        // Added 'balanceDue' to match the payload submitted from AddPurchaseScreen
-        final dueKeys = ['balanceDue', 'dueAmount', 'due_amount', 'balance', 'remainingAmount', 'amountDue'];
-        bool foundDueKey = false;
-        for (final key in dueKeys) {
-          if (rawMap[key] != null) {
-            dueAmount = double.tryParse(rawMap[key].toString()) ?? 0.0;
-            foundDueKey = true;
-            break;
-          }
-        }
-        if (!foundDueKey && cleanStatus != "pending") {
-          dueAmount = 0.0;
-        } else if (!foundDueKey && cleanStatus == "pending") {
-          dueAmount = totalBillAmount;
-        }
-      }
-
-      // 3. PAID CONDITION: Explicit paid status value or no balance remaining
-      if (cleanStatus == "paid" || (totalBillAmount > 0 && dueAmount == 0)) {
-        return "Paid";
-      }
-      
-      // 4. PENDING CONDITION: Fallback default if amount is due
       return "Pending";
     } catch (_) {
       return "Pending";
     }
   }
+
   Future<void> loadPurchases() async {
     try {
+      debugPrint("Fetching purchases from service...");
       final data = await PurchaseService().getPurchases();
+      debugPrint("Fetched ${data.length} purchase orders successfully.");
+      
       if (!mounted) return;
       setState(() {
         purchases = data;
         filteredPurchases = data;
         isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint("Error loading purchases: $e");
+      debugPrint("Stack trace: $stackTrace");
+      
       if (!mounted) return;
       setState(() {
         isLoading = false;
       });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to fetch purchases: $e"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -222,9 +152,35 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     return purchases
         .where((purchase) {
           final status = _getSafeStatus(purchase).toLowerCase();
-          return status == "pending" || status == "draft";
+          return status == "pending" || status == "partially paid" || status == "draft";
         })
-        .fold(0.0, (sum, purchase) => sum + _getSafeAmount(purchase));
+        .fold(0.0, (sum, purchase) => sum + (purchase.balanceDue > 0 ? purchase.balanceDue : _getSafeAmount(purchase)));
+  }
+
+  Color _getStatusTextColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return const Color(0xFF10B981);
+      case 'partially paid':
+        return const Color(0xFF2563EB);
+      case 'draft':
+        return const Color(0xFF64748B);
+      default:
+        return const Color(0xFFEA580C);
+    }
+  }
+
+  Color _getStatusBgColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return const Color(0xFFECFDF5);
+      case 'partially paid':
+        return const Color(0xFFEFF6FF);
+      case 'draft':
+        return const Color(0xFFF1F5F9);
+      default:
+        return const Color(0xFFFFF7ED);
+    }
   }
 
   @override
@@ -499,145 +455,148 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                             productCount = (purchase as dynamic).items.length;
                           } catch (_) {}
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFF1F5F9)),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x03000000),
-                                  spreadRadius: 1,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                )
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(10),
+                          return GestureDetector(
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PurchaseDetailsScreen(purchase: purchase),
+                                ),
+                              );
+                              await refreshPurchases();
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFFF1F5F9)),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x03000000),
+                                    spreadRadius: 1,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.description_outlined, color: Color(0xFF64748B), size: 20),
                                       ),
-                                      child: const Icon(Icons.description_outlined, color: Color(0xFF64748B), size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            purchase.supplierName.toUpperCase(),
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF1E293B),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              purchase.supplierName.toUpperCase(),
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1E293B),
+                                              ),
                                             ),
-                                          ),
+                                            const SizedBox(height: 4),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEFF6FF),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                purchase.purchaseNumber,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF3B82F6),
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              "Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
+                                              style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text("Payment", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                                           const SizedBox(height: 4),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFEFF6FF),
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: _getStatusBgColor(orderStatus),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              purchase.purchaseNumber,
-                                              style: const TextStyle(
-                                                color: Color(0xFF3B82F6),
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
+                                              orderStatus,
+                                              style: TextStyle(
+                                                color: _getStatusTextColor(orderStatus),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            "Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}",
-                                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                                          ),
                                         ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        const Text("Payment", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: orderStatus.toLowerCase() == "paid"
-                                                ? const Color(0xFFECFDF5)
-                                                : orderStatus.toLowerCase() == "draft"
-                                                    ? const Color(0xFFEFF6FF)
-                                                    : const Color(0xFFFFF7ED),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            orderStatus,
-                                            style: TextStyle(
-                                              color: orderStatus.toLowerCase() == "paid"
-                                                  ? const Color(0xFF10B981)
-                                                  : orderStatus.toLowerCase() == "draft"
-                                                      ? const Color(0xFF3B82F6)
-                                                      : const Color(0xFFEA580C),
-                                              fontSize: 12,
+                                      )
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("Purchase Amount", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            "₹${calculatedAmount.toStringAsFixed(2)}",
+                                            style: const TextStyle(
+                                              color: Color(0xFF00B287),
                                               fontWeight: FontWeight.bold,
+                                              fontSize: 16,
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text("Purchase Amount", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          "₹${calculatedAmount.toStringAsFixed(2)}",
-                                          style: const TextStyle(
-                                            color: Color(0xFF00B287),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF8FAFC),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.shopping_bag_outlined, size: 14, color: Color(0xFF64748B)),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "$productCount Products",
-                                            style: const TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.w500),
-                                          ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFC),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.shopping_bag_outlined, size: 14, color: Color(0xFF64748B)),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              "$productCount Products",
+                                              style: const TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -673,7 +632,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border:  Border.all(color: Color(0x99E2E8F0)),
+          border: Border.all(color: const Color(0x99E2E8F0)),
         ),
         child: Row(
           children: [
@@ -717,7 +676,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border:  Border.all(color: Color(0x99E2E8F0)),
+        border: Border.all(color: const Color(0x99E2E8F0)),
       ),
       child: Row(
         children: [

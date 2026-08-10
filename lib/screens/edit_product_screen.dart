@@ -4,9 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import '../models/product_model.dart'; 
 import '../models/category_model.dart';
 import '../models/warehouse_model.dart';
+import '../models/supplier_model.dart';
 import '../services/product_service.dart';
 import '../services/category_service.dart';
 import '../services/warehouse_service.dart';
+import '../services/supplier_service.dart';
 
 class EditProductScreen extends StatefulWidget {
   final Product product;
@@ -25,6 +27,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final ProductService _productService = ProductService();
   final CategoryService _categoryService = CategoryService();
   final WarehouseService _warehouseService = WarehouseService();
+  final SupplierService _supplierService = SupplierService();
   final ImagePicker _picker = ImagePicker();
   
   bool _isSaving = false;
@@ -39,6 +42,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   late TextEditingController _descriptionController;
   
   late TextEditingController _storageController;
+  late TextEditingController _stockController;
   late TextEditingController _minStockController;
   late TextEditingController _lengthController;
   late TextEditingController _widthController;
@@ -56,24 +60,23 @@ class _EditProductScreenState extends State<EditProductScreen> {
   // Dropdown States
   Category? _selectedCategory;
   Warehouse? _selectedWarehouse;
+  Supplier? _selectedSupplier;
   List<Category> _categories = [];
   List<Warehouse> _warehouses = [];
+  List<Supplier> _suppliers = [];
   String? _selectedUnit;
   String? _selectedDimensionUnit;
   String? _selectedFragility;
-  String? _selectedSupplier;
 
   @override
   void initState() {
     super.initState();
     
-    // Safely extract data as a map to bypass missing class property definitions during compilation
     Map<String, dynamic> productMap = {};
     try {
       productMap = (widget.product as dynamic).toJson();
     } catch (_) {}
     
-    // Initialize form controllers safely with existing values or empty defaults
     _nameController = TextEditingController(text: widget.product.name);
     _skuController = TextEditingController(text: widget.product.sku);
     _brandController = TextEditingController(text: widget.product.brandName);
@@ -83,9 +86,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _descriptionController = TextEditingController(text: productMap['description']?.toString() ?? '');
     
     _storageController = TextEditingController(text: widget.product.storageLocation);
+    _stockController = TextEditingController(text: widget.product.stock.toString());
     _minStockController = TextEditingController(text: widget.product.lowStockThreshold.toString());
     
-    // Extract nested dimensions safely if they exist in your JSON format
     var dims = productMap['dimensions'] ?? {};
     _lengthController = TextEditingController(text: (dims['length'] ?? productMap['length'] ?? '0.0').toString());
     _widthController = TextEditingController(text: (dims['width'] ?? productMap['width'] ?? '0.0').toString());
@@ -104,7 +107,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _selectedUnit = widget.product.unit;
     _selectedDimensionUnit = dims['unit']?.toString() ?? productMap['dimensionUnit']?.toString() ?? 'Inch';
     _selectedFragility = (productMap['fragile'] == true) ? 'Yes' : 'No';
-    _selectedSupplier = productMap['supplierName']?.toString() ?? 'Supreme Suppliers';
 
     _loadInitialData(productMap);
   }
@@ -118,6 +120,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _barcodeController.dispose();
     _descriptionController.dispose();
     _storageController.dispose();
+    _stockController.dispose();
     _minStockController.dispose();
     _lengthController.dispose();
     _widthController.dispose();
@@ -136,18 +139,25 @@ class _EditProductScreenState extends State<EditProductScreen> {
     try {
       _categories = await _categoryService.getCategories();
       _warehouses = await _warehouseService.getWarehouses();
+      _suppliers = await _supplierService.getSuppliers();
       
       final categoryId = productMap['category'] ?? productMap['categoryId'];
       final warehouseId = productMap['warehouseId'];
+      final supplierName = productMap['supplierName'] ?? widget.product.supplierName;
 
       if (_categories.isNotEmpty && categoryId != null) {
         try {
-          _selectedCategory = _categories.firstWhere((c) => c.id == categoryId.toString());
+          _selectedCategory = _categories.firstWhere((c) => c.id == categoryId.toString() || c.name == categoryId.toString());
         } catch (_) {}
       }
       if (_warehouses.isNotEmpty && warehouseId != null) {
         try {
-          _selectedWarehouse = _warehouses.firstWhere((w) => w.id == warehouseId.toString());
+          _selectedWarehouse = _warehouses.firstWhere((w) => w.id == warehouseId.toString() || w.name == warehouseId.toString());
+        } catch (_) {}
+      }
+      if (_suppliers.isNotEmpty && supplierName != null) {
+        try {
+          _selectedSupplier = _suppliers.firstWhere((s) => s.supplierName.toLowerCase() == supplierName.toString().toLowerCase());
         } catch (_) {}
       }
 
@@ -214,9 +224,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
         );
         return;
       }
+
+      if (_selectedSupplier == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a supplier")),
+        );
+        return;
+      }
       
       setState(() => _isSaving = true);
- 
+
       await _productService.updateProduct(
         id: widget.product.id,
         name: _nameController.text.trim(),
@@ -225,8 +242,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
         category: _selectedCategory!.id,
         warehouseId: _selectedWarehouse!.id,
         storageLocation: _storageController.text.trim(),
-        unit: _selectedUnit ?? 'Piece',
-        stock: widget.product.stock, 
+        unit: _selectedUnit ?? 'Pcs',
+        stock: int.tryParse(_stockController.text.trim()) ?? widget.product.stock, 
         lowStockThreshold: int.tryParse(_minStockController.text) ?? 10,
         purchasePrice: double.tryParse(_purchasePriceController.text) ?? 0.0,
         sellingPrice: double.tryParse(_sellingPriceController.text) ?? 0.0,
@@ -240,7 +257,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         fragile: _selectedFragility == 'Yes',
         gstPercentage: double.tryParse(_gstController.text) ?? 18.0,
         mrp: double.tryParse(_mrpController.text) ?? 0.0,
-        supplierName: _selectedSupplier ?? 'Default Supplier',
+        supplierName: _selectedSupplier!.supplierName,
         amountPaid: double.tryParse(_amountPaidController.text) ?? 0.0,
         outstandingBalance: double.tryParse(_balanceController.text) ?? 0.0,
         purchaseDate: _purchaseDateController.text.isNotEmpty 
@@ -302,7 +319,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                     const Text('Category *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
                                     const SizedBox(height: 6),
                                     DropdownButtonFormField<Category>(
-                                      value: _selectedCategory,
+                                      value: _categories.contains(_selectedCategory) ? _selectedCategory : null,
                                       hint: const Text('Select category', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
                                       items: _categories.map((category) {
                                         return DropdownMenuItem(
@@ -352,7 +369,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                                     const Text('Warehouse *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
                                     const SizedBox(height: 6),
                                     DropdownButtonFormField<Warehouse>(
-                                      value: _selectedWarehouse,
+                                      value: _warehouses.contains(_selectedWarehouse) ? _selectedWarehouse : null,
                                       hint: const Text('Select warehouse', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
                                       items: _warehouses.map((warehouse) {
                                         return DropdownMenuItem(
@@ -379,9 +396,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
                               ),
                               
                               _buildTextField('Storage Location', 'Enter storage location (e.g., A-1)', _storageController),
-                              
-                              // Unit Dropdown - Added 'Piece' option to prevent assertion error
                               _buildDropdownField('Unit *', 'Select unit', ['Piece', 'Pcs', 'Boxes', 'Meters', 'Liters'], _selectedUnit, (v) => setState(() => _selectedUnit = v)),
+                              
+                              // Added Quantity Field between Unit and Minimum Stock Level
+                              _buildTextField('Quantity *', 'Enter quantity', _stockController, isMandatory: true, isNumber: true),
                               
                               _buildTextField('Minimum Stock Level *', 'Enter minimum stock', _minStockController, isNumber: true),
                               
@@ -429,7 +447,40 @@ class _EditProductScreenState extends State<EditProductScreen> {
                             icon: Icons.local_shipping_outlined,
                             accentColor: const Color(0xFF2563EB),
                             children: [
-                              _buildDropdownField('Supplier *', 'Select supplier', ['Supreme Suppliers', 'Jaquar Distributors', 'Hindware Corporate'], _selectedSupplier, (v) => setState(() => _selectedSupplier = v)),
+                              // Dynamic Backend Supplier Dropdown
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Supplier *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
+                                    const SizedBox(height: 6),
+                                    DropdownButtonFormField<Supplier>(
+                                      value: _suppliers.contains(_selectedSupplier) ? _selectedSupplier : null,
+                                      hint: const Text('Select supplier', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                                      items: _suppliers.map((supplier) {
+                                        return DropdownMenuItem(
+                                          value: supplier,
+                                          child: Text(supplier.supplierName, style: const TextStyle(fontSize: 14)),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedSupplier = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        fillColor: Colors.white,
+                                        filled: true,
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               _buildTextField('Amount Paid *', '0.00', _amountPaidController, isNumber: true, prefixText: '₹ '),
                               _buildTextField('Outstanding Balance', '0.00', _balanceController, isNumber: true, prefixText: '₹ '),
                               _buildTextField('Purchase Date *', 'Select date', _purchaseDateController, suffixIcon: Icons.calendar_today_outlined, readOnly: true, onTap: () async {
@@ -672,10 +723,27 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Widget _buildDropdownField(
     String label, 
     String hint, 
-    List<String> items, 
+    List<String> itemsList, 
     String? selectedValue, 
     ValueChanged<String?> onChanged,
   ) {
+    List<String> items = List<String>.from(itemsList);
+    String? validValue;
+
+    if (selectedValue != null && selectedValue.trim().isNotEmpty) {
+      final trimmed = selectedValue.trim();
+      for (final item in items) {
+        if (item.toLowerCase() == trimmed.toLowerCase()) {
+          validValue = item;
+          break;
+        }
+      }
+      if (validValue == null) {
+        items.add(trimmed);
+        validValue = trimmed;
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -684,7 +752,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: selectedValue,
+            value: validValue,
             hint: Text(hint, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
             onChanged: onChanged,
             items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),

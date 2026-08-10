@@ -4,9 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import '../services/product_service.dart';
 import '../models/category_model.dart';
 import '../models/warehouse_model.dart';
+import '../models/supplier_model.dart';
 
 import '../services/category_service.dart';
 import '../services/warehouse_service.dart';
+import '../services/supplier_service.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -20,6 +22,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final ProductService _productService = ProductService();
   final CategoryService _categoryService = CategoryService();
   final WarehouseService _warehouseService = WarehouseService();
+  final SupplierService _supplierService = SupplierService();
   final ImagePicker _picker = ImagePicker();
   
   bool _isSaving = false;
@@ -34,6 +37,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _descriptionController = TextEditingController();
   
   final _storageController = TextEditingController();
+  final _stockController = TextEditingController();
   final _minStockController = TextEditingController();
   final _lengthController = TextEditingController();
   final _widthController = TextEditingController();
@@ -51,12 +55,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
   // Dropdown States
   Category? _selectedCategory;
   Warehouse? _selectedWarehouse;
+  Supplier? _selectedSupplier;
   List<Category> _categories = [];
   List<Warehouse> _warehouses = [];
+  List<Supplier> _suppliers = [];
   String? _selectedUnit;
   String? _selectedDimensionUnit = 'Inch';
   String? _selectedFragility = 'No';
-  String? _selectedSupplier;
 
   @override
   void initState() {
@@ -73,6 +78,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _barcodeController.dispose();
     _descriptionController.dispose();
     _storageController.dispose();
+    _stockController.dispose();
     _minStockController.dispose();
     _lengthController.dispose();
     _widthController.dispose();
@@ -142,6 +148,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
         );
         return;
       }
+
+      if (_selectedSupplier == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a supplier")),
+        );
+        return;
+      }
       
       setState(() => _isSaving = true);
  
@@ -153,7 +166,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         warehouseId: _selectedWarehouse!.id,
         storageLocation: _storageController.text.trim(),
         unit: _selectedUnit ?? 'Pcs',
-        stock: 0, 
+        stock: int.tryParse(_stockController.text.trim()) ?? 0, 
         lowStockThreshold: int.tryParse(_minStockController.text) ?? 10,
         purchasePrice: double.tryParse(_purchasePriceController.text) ?? 0.0,
         sellingPrice: double.tryParse(_sellingPriceController.text) ?? 0.0,
@@ -167,7 +180,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         fragile: _selectedFragility == 'Yes',
         gstPercentage: double.tryParse(_gstController.text) ?? 18.0,
         mrp: double.tryParse(_mrpController.text) ?? 0.0,
-        supplierName: _selectedSupplier ?? 'Default Supplier',
+        supplierName: _selectedSupplier!.supplierName,
         amountPaid: double.tryParse(_amountPaidController.text) ?? 0.0,
         outstandingBalance: double.tryParse(_balanceController.text) ?? 0.0,
         purchaseDate: _purchaseDateController.text.isNotEmpty 
@@ -307,6 +320,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               
                               _buildTextField('Storage Location', 'Enter storage location (e.g., A-1)', _storageController),
                               _buildDropdownField('Unit *', 'Select unit', ['Pcs', 'Boxes', 'Meters', 'Liters'], _selectedUnit, (v) => setState(() => _selectedUnit = v)),
+                              _buildTextField('Quantity *', 'Enter initial quantity', _stockController, isMandatory: true, isNumber: true),
                               _buildTextField('Minimum Stock Level *', 'Enter minimum stock', _minStockController, isNumber: true),
                               
                               const Padding(
@@ -366,7 +380,39 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             icon: Icons.local_shipping_outlined,
                             accentColor: const Color(0xFF2563EB),
                             children: [
-                              _buildDropdownField('Supplier *', 'Select supplier', ['Supreme Suppliers', 'Jaquar Distributors', 'Hindware Corporate'], _selectedSupplier, (v) => setState(() => _selectedSupplier = v)),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Supplier *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
+                                    const SizedBox(height: 6),
+                                    DropdownButtonFormField<Supplier>(
+                                      value: _selectedSupplier,
+                                      hint: const Text('Select supplier', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                                      items: _suppliers.map((supplier) {
+                                        return DropdownMenuItem(
+                                          value: supplier,
+                                          child: Text(supplier.supplierName, style: const TextStyle(fontSize: 14)),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedSupplier = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        fillColor: Colors.white,
+                                        filled: true,
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               _buildTextField('Amount Paid *', '0.00', _amountPaidController, isNumber: true, prefixText: '₹ '),
                               _buildTextField('Outstanding Balance', '0.00', _balanceController, isNumber: true, prefixText: '₹ '),
                               _buildTextField('Purchase Date *', 'Select date', _purchaseDateController, suffixIcon: Icons.calendar_today_outlined, readOnly: true, onTap: () async {
@@ -495,6 +541,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       _categories = await _categoryService.getCategories();
       _warehouses = await _warehouseService.getWarehouses();
+      _suppliers = await SupplierService().getSuppliers();
       if (mounted) {
         setState(() {});
       }
@@ -720,7 +767,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 }
 
-// Fixed typo wrapper name from original file alignment requirement
 class WidgetInkwell extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;

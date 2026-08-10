@@ -674,7 +674,7 @@ class _ProductCardItemState extends State<_ProductCardItem> {
                       children: [
                         const Icon(Icons.layers_outlined, size: 14, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
-                        Text('${widget.item.variants.length} Variants', style: const TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.w500)),
+                        Text('Variants', style: const TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),

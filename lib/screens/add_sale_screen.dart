@@ -1149,21 +1149,25 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showCustomPriceDialog(index, item.rate),
-                        icon: const Icon(Icons.edit_road_outlined, size: 18),
-                        label: const Text("Edit Price"),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0F9D94),
-                          side: const BorderSide(color: Color(0xFF0F9D94)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
+                   Expanded(
+  child: OutlinedButton.icon(
+    onPressed: () => _showCustomPriceDialog(
+      index, 
+      item.rate, 
+      item.productId,
+    ),
+    icon: const Icon(Icons.edit_road_outlined, size: 18),
+    label: const Text("Edit Price"),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: const Color(0xFF0F9D94),
+      side: const BorderSide(color: Color(0xFF0F9D94)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+    ),
+  ),
+),
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () {
@@ -1250,73 +1254,148 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  void _showCustomPriceDialog(int index, double currentRate) {
-    final priceController = TextEditingController(text: currentRate.toStringAsFixed(2));
+void _showCustomPriceDialog(int index, double currentRate, String productId) {
+    final priceController = TextEditingController(
+      text: currentRate.toStringAsFixed(2),
+    );
+    bool updateMasterCatalog = false;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "Modify Unit Price",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2559),
-            ),
-          ),
-          content: TextFormField(
-            controller: priceController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              hintText: "Enter manual rate per piece...",
-              prefixText: "₹ ",
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2F80FF)),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final newRate = double.tryParse(priceController.text.trim());
-                if (newRate != null && newRate >= 0) {
-                  setState(() {
-                    items[index].rate = newRate;
-                    items[index].calculateAmount();
-                  });
-                  Navigator.pop(context);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please enter a valid amount")),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F9D94),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+              title: const Text(
+                "Modify Selling Price",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2559),
                 ),
               ),
-              child: const Text(
-                "Update Price",
-                style: TextStyle(color: Colors.white),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: priceController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Enter manual rate per piece...",
+                      prefixText: "₹ ",
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    activeColor: const Color(0xFF0F9D94),
+                    title: const Text(
+                      "Update master product selling price",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1B2559),
+                      ),
+                    ),
+                    subtitle: const Text(
+                      "Saves this price to master inventory for future sales",
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    value: updateMasterCatalog,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        updateMasterCatalog = val ?? false;
+                      });
+                    },
+                  ),
+                ],
               ),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final newRate = double.tryParse(
+                      priceController.text.trim(),
+                    );
+                    if (newRate != null && newRate >= 0) {
+                      setState(() {
+                        items[index].rate = newRate;
+                        items[index].calculateAmount();
+                      });
+
+                      if (updateMasterCatalog) {
+                        try {
+                          final prodIndex = products.indexWhere(
+                            (p) => p.id == productId,
+                          );
+                          if (prodIndex >= 0) {
+                            // 1. Mutate local list item
+                            products[prodIndex].sellingPrice = newRate;
+
+                            // 2. Call focused PUT request for selling price
+                            await ProductService().updateSellingPrice(
+                              productId,
+                              newRate,
+                            );
+                          }
+
+                          _showSnackBar(
+                            "Master product selling price updated!",
+                            Colors.green,
+                          );
+                        } catch (e) {
+                          _showSnackBar(
+                            "Failed to update master catalog: $e",
+                            Colors.orange,
+                          );
+                        }
+                      }
+
+                      if (context.mounted) Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please enter a valid amount"),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F9D94),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    "Update Price",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

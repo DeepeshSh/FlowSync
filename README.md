@@ -15,7 +15,7 @@ The project focuses not only on building interfaces, but also on modelling **rea
 
 ---
 
-# 🎯 Objectives
+# Objectives
 
 FlowSync was developed with the following objectives:
 
@@ -30,9 +30,9 @@ FlowSync was developed with the following objectives:
 
 ---
 
-# ✨ Features
+# Features
 
-## 📊 Dashboard
+## Dashboard
 
 The dashboard provides a centralized overview of the business and surfaces important information without requiring users to navigate through multiple modules.
 
@@ -53,7 +53,7 @@ The dashboard is designed around actionable business information rather than sim
 
 ---
 
-## 📦 Product Management
+## Product Management
 
 The Product Management module provides a centralized catalog for maintaining products handled by the business.
 
@@ -82,7 +82,7 @@ Products are maintained as independent business entities and can subsequently be
 
 ---
 
-# 🏢 Multi-Warehouse Management
+# Multi-Warehouse Management
 
 FlowSync supports businesses operating with multiple physical warehouses.
 
@@ -99,7 +99,7 @@ The warehouse module supports:
 
 ### Warehouse Transfer Flow
 
-```text
+
 Warehouse A
      │
      │ Stock Transfer
@@ -114,7 +114,7 @@ This makes inventory management more practical for businesses that operate from 
 
 ---
 
-📦 Inventory Management
+ Inventory Management
 
 Inventory is one of the core modules of FlowSync.
 
@@ -155,9 +155,9 @@ Purchase
 This approach provides better accountability and makes it easier to identify how the current stock position was reached.
 
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-🔄 Stock Movement Tracking
+Stock Movement Tracking
 
 FlowSync maintains a structured history of inventory movements.
 
@@ -228,7 +228,7 @@ This creates an audit-friendly trail of inventory changes instead of silently mo
 
 ---
 
-🛒 Purchase Order Management
+Purchase Order Management
 
 The Purchase Order module manages the procurement process from suppliers.
 
@@ -288,7 +288,7 @@ Supplier Payable Updated
 
 ---
 
-👥 Supplier Management
+Supplier Management
 
 The Supplier module maintains supplier information and provides visibility into supplier-related transactions.
 
@@ -316,7 +316,7 @@ The module helps the business understand both the operational and financial rela
 
 ---
 
-💰 Sales Order Management
+Sales Order Management
 
 The Sales Order module manages customer orders and connects sales activity with inventory.
 
@@ -366,7 +366,7 @@ This connects sales transactions directly with inventory and customer financial 
 
 ---
 
-👤 Customer Management
+Customer Management
 
 The Customer module provides centralized management of customer records.
 
@@ -394,7 +394,7 @@ This allows the business to understand customer activity and outstanding balance
 
 ---
 
-💳 Payment & Outstanding Management
+Payment & Outstanding Management
 
 FlowSync incorporates financial tracking into its business workflows.
 
@@ -427,7 +427,7 @@ This provides a clearer view of outstanding financial obligations.
 
 ---
 
-⚠️ Damage & Stock Adjustment Management
+Damage & Stock Adjustment Management
 
 Physical inventory can differ from recorded inventory due to damaged products, loss, counting errors, or other operational reasons.
 
@@ -466,7 +466,7 @@ This improves stock accountability and supports inventory reconciliation.
 
 ---
 
-📈 Reports & Analytics
+Reports & Analytics
 
 FlowSync provides reports that transform operational data into useful business information.
 
@@ -536,7 +536,7 @@ The reporting system is designed around structured transactional data rather tha
 
 ---
 
-🔎 Search & Filtering
+Search & Filtering
 
 Business applications can contain a large number of records, making efficient data discovery important.
 
@@ -568,7 +568,7 @@ Reusable search and filtering patterns are used to maintain consistency througho
 
 ---
 
-🎨 User Interface & UX
+User Interface & UX
 
 FlowSync follows a modern, business-oriented card-based UI.
 
@@ -613,10 +613,9 @@ Reports
 
 This creates a consistent experience while allowing each module to present its own business-specific information.
 
-
 ---
 
-🏗️ System Architecture
+System Architecture
 
 FlowSync follows a layered full-stack architecture that separates the frontend, backend, business logic, and database responsibilities.
 
@@ -709,13 +708,11 @@ Authorization
 
 Error handling
 
-
 Keeping important business logic on the backend prevents critical rules from being dependent only on the client application.
-
 
 ---
 
-🌐 REST API Architecture
+REST API Architecture
 
 FlowSync communicates between the frontend and backend using RESTful APIs.
 
@@ -744,10 +741,9 @@ DELETE    → Remove records
 
 This resource-oriented approach keeps the backend modular and allows the same backend to potentially serve multiple clients in the future.
 
-
 ---
 
-🗄️ Database Design
+Database Design
 
 FlowSync uses a relational data model where business entities are connected through meaningful relationships.
 
@@ -787,7 +783,7 @@ The relational approach helps maintain data integrity and avoids unnecessary dup
 
 ---
 
-🧠 Business Logic
+Business Logic
 
 A major focus of FlowSync is implementing real business workflows instead of limiting the application to basic CRUD operations.
 
@@ -829,10 +825,9 @@ Update Customer Receivable
 
 This demonstrates how a single business operation can affect multiple related entities while maintaining consistency.
 
-
 ---
 
-🔐 Authentication & Authorization
+Authentication & Authorization
 
 FlowSync is designed around backend-controlled authentication and authorization.
 
@@ -855,10 +850,9 @@ Changing business records
 
 Security rules should therefore be enforced at the backend rather than relying exclusively on frontend restrictions.
 
-
 ---
 
-🧩 Modular Architecture
+Modular Architecture
 
 The application is divided into independent but interconnected business modules.
 
@@ -886,7 +880,7 @@ This modular approach makes it easier to develop, maintain, test, and extend ind
 
 ---
 
-🛠️ Technology Stack
+Technology Stack
 
 Frontend
 
@@ -949,7 +943,7 @@ VS Code
 
 ---
 
-📁 Project Structure
+Project Structure
 
 A high-level representation of the project architecture:
 
@@ -985,10 +979,9 @@ FlowSync/
 
 The exact structure may vary according to implementation, but the architecture follows the principle of separating UI, API, business logic, and data-access responsibilities.
 
-
 ---
 
-🔄 End-to-End Business Flow
+End-to-End Business Flow
 
 A complete purchase-to-inventory workflow can be represented as:
 
@@ -1040,10 +1033,9 @@ Movement Recorded
 
 These workflows demonstrate how the different modules of FlowSync work together as one integrated business system.
 
-
 ---
 
-🧪 API Testing
+API Testing
 
 Backend APIs can be tested independently using tools such as Postman.
 
@@ -1065,9 +1057,7 @@ Database updates
 
 Inventory calculations
 
-
 Testing APIs independently also helps identify backend issues before integrating functionality with the frontend.
-
 
 ---
 
@@ -1121,10 +1111,9 @@ Customer Balance
 
 Implementing such workflows requires careful handling of business rules and data consistency.
 
-
 ---
 
-📈 Reports & Decision Support
+Reports & Decision Support
 
 FlowSync is designed not only to store business information but also to make that information useful.
 
@@ -1146,13 +1135,11 @@ Where has stock moved?
 
 How much inventory has been damaged or adjusted?
 
-
 This transforms raw transactional data into information that can support operational decisions.
-
 
 ---
 
-🚀 Future Enhancements
+Future Enhancements
 
 The architecture provides a foundation for additional capabilities, including:
 
@@ -1190,106 +1177,32 @@ Advanced financial reporting
 
 Advanced business dashboards
 
+---
 
+Screenshots
+
+##Login Page
+
+<img width="1344" height="2992" alt="Login_Page" src="https://github.com/user-attachments/assets/21785818-cb36-4e57-b0de-e1a5cacf2d0b" />
+
+
+##Purchase 
+
+<img width="1344" height="2992" alt="Purchase" src="https://github.com/user-attachments/assets/82a3f8ab-ec9f-47e6-b1d3-dc44d14f12a3" />
+
+
+##Sales 
+
+<img width="1344" height="2992" alt="Sales" src="https://github.com/user-attachments/assets/6e929169-a871-4db9-9263-14d276e0e2d8" />
+
+
+##PDF Billing
+
+<img width="1344" height="2992" alt="pdf_billing" src="https://github.com/user-attachments/assets/f2c2a612-6a2e-429a-9a30-a8c79b584ac1" />
 
 ---
 
-💡 What This Project Demonstrates
-
-FlowSync demonstrates practical understanding of:
-
-Full-stack application development
-
-Flutter application development
-
-Dart programming
-
-Python backend development
-
-FastAPI
-
-REST API architecture
-
-PostgreSQL
-
-Relational database design
-
-API integration
-
-CRUD operations
-
-Business logic
-
-Data validation
-
-Authentication & authorization
-
-Inventory management
-
-Multi-warehouse architecture
-
-Transaction management
-
-State management
-
-Modular application architecture
-
-Reusable UI components
-
-Search and filtering
-
-Reporting systems
-
-Git & GitHub
-
-Real-world business problem modelling
-
-
-
----
-
-📸 Screenshots
-
-> Add screenshots of the actual application below to showcase the implementation.
-
-
-
-Dashboard
-
-Add dashboard screenshot here.
-
-Inventory
-
-Add inventory screenshot here.
-
-Purchase Orders
-
-Add purchase order screenshot here.
-
-Sales Orders
-
-Add sales order screenshot here.
-
-Customers
-
-Add customer management screenshot here.
-
-Suppliers
-
-Add supplier management screenshot here.
-
-Warehouses
-
-Add warehouse management screenshot here.
-
-Reports
-
-Add reports screenshot here.
-
-
----
-
-⚙️ Getting Started
+Getting Started
 
 Prerequisites
 
@@ -1311,7 +1224,7 @@ Android Studio or VS Code
 
 ---
 
-📥 Installation
+Installation
 
 1. Clone the Repository
 
@@ -1352,7 +1265,7 @@ uvicorn app.main:app --reload
 
 ---
 
-📱 Frontend Setup
+Frontend Setup
 
 Navigate to the frontend directory:
 
@@ -1371,7 +1284,7 @@ Make sure the frontend is configured with the correct backend API URL.
 
 ---
 
-🌱 Development Approach
+Development Approach
 
 FlowSync was developed using a structured software engineering workflow:
 
@@ -1398,62 +1311,23 @@ The development process focused on understanding the underlying business require
 
 ---
 
-🏆 Project Highlights
-
-Full-Stack Development
-
-FlowSync covers both frontend application development and backend/API development, providing experience across the complete application stack.
-
-Real-World Business Modelling
-
-The application models actual business entities and workflows including products, inventory, warehouses, purchases, sales, customers, suppliers, payments, and stock movements.
-
-Business Logic
-
-The project goes beyond basic CRUD functionality by implementing workflows where a single operation can affect multiple related entities.
-
-Data-Driven Architecture
-
-Business information is dynamically retrieved from the backend and database rather than being hardcoded into the application interface.
-
-Scalable Design
-
-The separation between frontend, API, business logic, and database provides a foundation for future functionality and additional clients.
-
-Practical Problem Solving
-
-The application addresses real operational problems such as inventory discrepancies, warehouse-level stock tracking, outstanding payments, damaged inventory, and transaction history.
-
 
 ---
 
-🤝 Contributing
+ Contributing
 
 Contributions and suggestions are welcome.
 
 1. Fork the repository.
-
-
 2. Create a new branch.
-
-
 3. Make your changes.
-
-
 4. Commit your changes.
-
-
 5. Push the branch.
-
-
 6. Open a Pull Request.
-
-
-
 
 ---
 
-📄 License
+ License
 
 This project is developed for business-management and software-engineering purposes.
 
@@ -1462,7 +1336,7 @@ If this project is distributed publicly, an appropriate open-source license can 
 
 ---
 
-⭐ FlowSync
+ FlowSync
 
 Manage Products. Control Inventory. Simplify Business.
 

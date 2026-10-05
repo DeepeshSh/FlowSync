@@ -1,4 +1,4 @@
-
+```markdown
 # FlowSync
 
 ## Smart Business Management System for Sanitary & Hardware Businesses
@@ -9,9 +9,17 @@ Sanitary businesses often manage thousands of products, multiple warehouses, sup
 
 FlowSync brings these operations together into a centralized, structured, and data-driven platform.
 
-The system provides dedicated modules for **Products, Inventory, Warehouses, Purchases, Sales, Customers, Suppliers, Payments, Stock Movements, and Reports**, with a backend responsible for API communication, business logic, validation, database operations, and data consistency.
+The system provides dedicated modules for **Products, Inventory, Warehouses, Purchases, Sales, Customers, Suppliers, Payments, Stock Movements, and Reports**, with a robust backend responsible for API communication, business logic, validation, database operations, and data consistency.
 
-The project focuses not only on building interfaces, but also on modelling **real-world business workflows and relationships between different operational modules**.
+The project focuses not only on building responsive user interfaces, but also on modelling **real-world business workflows and relationships between different operational modules**.
+
+---
+
+# Download & Test the App (Release APK)
+
+You can directly download and test the physical Android release build of FlowSync from the link below:
+
+* **[Download FlowSync Release APK via Google Drive](https://drive.google.com/drive/folders/1-Placeholder-For-Your-Drive-Link)** *(Directly installable on physical Android devices)*
 
 ---
 
@@ -30,14 +38,13 @@ FlowSync was developed with the following objectives:
 
 ---
 
-# Features
+# Features & Business Modules
 
 ## Dashboard
 
 The dashboard provides a centralized overview of the business and surfaces important information without requiring users to navigate through multiple modules.
 
-It can provide visibility into:
-
+It provides visibility into:
 - Total products
 - Inventory status
 - Low-stock products
@@ -57,8 +64,7 @@ The dashboard is designed around actionable business information rather than sim
 
 The Product Management module provides a centralized catalog for maintaining products handled by the business.
 
-Products can contain information such as:
-
+Products contain information such as:
 - Product name
 - Product code / SKU
 - Category
@@ -71,8 +77,7 @@ Products can contain information such as:
 
 Products are maintained as independent business entities and can subsequently be associated with purchase orders, sales orders, warehouses, and inventory records.
 
-### Key capabilities
-
+### Key Capabilities
 - Add and update products
 - Categorize products
 - Manage product pricing
@@ -82,14 +87,13 @@ Products are maintained as independent business entities and can subsequently be
 
 ---
 
-# Multi-Warehouse Management
+## Multi-Warehouse Management
 
 FlowSync supports businesses operating with multiple physical warehouses.
 
 Instead of maintaining only one global stock quantity, inventory can be associated with individual warehouses, allowing users to understand **where a particular product is physically available**.
 
 The warehouse module supports:
-
 - Creating and managing warehouses
 - Maintaining warehouse information
 - Viewing warehouse-specific inventory
@@ -98,8 +102,7 @@ The warehouse module supports:
 - Maintaining warehouse-wise stock history
 
 ### Warehouse Transfer Flow
-
-
+```text
 Warehouse A
      │
      │ Stock Transfer
@@ -109,12 +112,11 @@ Warehouse B
      ▼
 Inventory Updated
 
-This makes inventory management more practical for businesses that operate from multiple locations.
-
+```
 
 ---
 
- Inventory Management
+## Inventory Management
 
 Inventory is one of the core modules of FlowSync.
 
@@ -122,831 +124,299 @@ The system treats inventory as more than just a quantity. Stock changes are conn
 
 Inventory can be affected by:
 
-Purchases
+* Purchases
+* Sales
+* Warehouse transfers
+* Damaged products
+* Stock adjustments
+* Returns
 
-Sales
+### Inventory Flow Diagram
 
-Warehouse transfers
-
-Damaged products
-
-Stock adjustments
-
-Returns
-
-
-Inventory Flow
-
+```text
 Purchase
-                       │
-                       ▼
-                 Stock Received
-                       │
-                       ▼
-                   Warehouse
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-        Sales       Transfer      Damage
-          │            │            │
-          ▼            ▼            ▼
-       Stock ↓      Stock Move    Stock ↓
+    │
+    ▼
+Stock Received
+    │
+    ▼
+Warehouse
+    │
+    ┌────────────┬────────────┐
+    ▼            ▼            ▼
+  Sales       Transfer     Damage
+    │            │            │
+    ▼            ▼            ▼
+Stock ↓      Stock Move   Stock ↓
 
-This approach provides better accountability and makes it easier to identify how the current stock position was reached.
-
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-Stock Movement Tracking
-
-FlowSync maintains a structured history of inventory movements.
-
-Stock movements can represent:
-
-Purchase receipts
-
-Sales
-
-Warehouse transfers
-
-Damaged stock
-
-Manual stock adjustments
-
-Returns
-
-
-A stock movement can contain information such as:
-
-Product
-
-Quantity
-
-Movement type
-
-Source warehouse
-
-Destination warehouse
-
-Reference transaction
-
-Date and time
-
-Reason or remarks
-
-
-Example
-
-Product: Ceramic Wash Basin
-
-Purchase
-   ↓
-+50 units
-   ↓
-Warehouse A
-
-Sale
-   ↓
--10 units
-   ↓
-Warehouse A
-
-Transfer
-   ↓
-20 units
-   ↓
-Warehouse A → Warehouse B
-
-Damage
-   ↓
--2 units
-   ↓
-Warehouse B
-
-This creates an audit-friendly trail of inventory changes instead of silently modifying stock quantities.
-
+```
 
 ---
 
-Purchase Order Management
+## Stock Movement Tracking
+
+FlowSync maintains a structured history of inventory movements to ensure complete traceability.
+
+Stock movements represent:
+
+* Purchase receipts
+* Sales
+* Warehouse transfers
+* Damaged stock
+* Manual stock adjustments
+* Returns
+
+### Stock Movement Data Structure
+
+A stock movement contains:
+
+* Product reference
+* Quantity change
+* Movement type
+* Source warehouse
+* Destination warehouse
+* Reference transaction ID
+* Date and timestamp
+* Reason or operational remarks
+
+```text
+Example: Ceramic Wash Basin
+  ├── Purchase (+50 units) → Warehouse A
+  ├── Sale (-10 units)     → Warehouse A
+  ├── Transfer (20 units)  → Warehouse A ──> Warehouse B
+  └── Damage (-2 units)    → Warehouse B
+
+```
+
+---
+
+## Purchase Order Management
 
 The Purchase Order module manages the procurement process from suppliers.
 
-Purchase orders can contain:
+Purchase orders contain:
 
-Supplier
+* Supplier details
+* Order date and expected delivery
+* Product line items and quantities
+* Purchase prices and unit rates
+* Discounts, taxes, and applicable charges
+* Total order amount
+* Order status and remarks
 
-Order date
+### Purchase Workflow Lifecycle
 
-Expected delivery information
+```text
+Draft ──> Confirmed ──> Received ──> Completed
 
-Products
+```
 
-Quantities
+```text
+Supplier ──> Purchase Order ──> Goods Received ──> Warehouse Selected 
+    ──> Inventory Updated ──> Stock Movement Created ──> Supplier Payable Updated
 
-Purchase prices
-
-Discounts
-
-Taxes or applicable charges
-
-Total amount
-
-Order status
-
-Notes
-
-
-A purchase order can progress through different stages:
-
-Draft
-  ↓
-Confirmed
-  ↓
-Received
-  ↓
-Completed
-
-The purchase workflow is connected to inventory so that receiving products can result in the appropriate stock update.
-
-Purchase Workflow
-
-Supplier
-   ↓
-Purchase Order
-   ↓
-Goods Received
-   ↓
-Warehouse Selected
-   ↓
-Inventory Updated
-   ↓
-Stock Movement Created
-   ↓
-Supplier Payable Updated
-
+```
 
 ---
 
-Supplier Management
+## Supplier Management
 
-The Supplier module maintains supplier information and provides visibility into supplier-related transactions.
+The Supplier module maintains supplier profiles and provides visibility into supplier-related operational and financial transactions.
 
-Supplier records can include:
+Records include:
 
-Supplier details
-
-Contact information
-
-Purchase history
-
-Purchase orders
-
-Payment history
-
-Outstanding payables
-
-Due amounts
-
-Transaction history
-
-
-The module helps the business understand both the operational and financial relationship with each supplier.
-
+* Supplier details and contact info
+* Purchase history and order logs
+* Payment history and outstanding payables
+* Due amounts and reconciliation statements
 
 ---
 
-Sales Order Management
+## Sales Order Management
 
-The Sales Order module manages customer orders and connects sales activity with inventory.
+The Sales Order module manages customer transactions and connects sales activity directly with inventory depletion.
 
-Sales orders can contain:
+Sales orders contain:
 
-Customer
+* Customer details
+* Order date and terms
+* Product items, quantities, and selling prices
+* Discounts, taxes, and total values
+* Payment information and order status
 
-Order date
+### Sales Workflow Lifecycle
 
-Products
+```text
+Customer ──> Sales Order ──> Order Confirmation ──> Stock Availability Check 
+    ──> Stock Deduction ──> Stock Movement Created ──> Payment / Receivable Updated
 
-Quantities
-
-Selling prices
-
-Discounts
-
-Taxes or applicable charges
-
-Total amount
-
-Payment information
-
-Order status
-
-Notes
-
-
-Sales Workflow
-
-Customer
-   ↓
-Sales Order
-   ↓
-Order Confirmation
-   ↓
-Stock Availability Check
-   ↓
-Stock Deduction
-   ↓
-Stock Movement Created
-   ↓
-Payment / Receivable Updated
-
-This connects sales transactions directly with inventory and customer financial information.
-
+```
 
 ---
 
-Customer Management
+## Customer Management
 
 The Customer module provides centralized management of customer records.
 
-It can maintain:
+It maintains:
 
-Customer information
-
-Contact details
-
-Sales history
-
-Sales orders
-
-Payment history
-
-Outstanding receivables
-
-Due amounts
-
-Transaction history
-
-
-This allows the business to understand customer activity and outstanding balances from a single location.
-
+* Customer information and addresses
+* Contact details and communication logs
+* Sales history and order lists
+* Payment history, outstanding receivables, and due balances
 
 ---
 
-Payment & Outstanding Management
+## Payment & Outstanding Management
 
-FlowSync incorporates financial tracking into its business workflows.
+FlowSync incorporates financial tracking directly into daily business operations.
 
-Customer Receivables
+### Customer Receivables
 
-Receivables represent money that customers still owe to the business.
+```text
+Sales Amount ──> Payment Received ──> Remaining Balance ──> Customer Receivable
 
-Sales Amount
-     ↓
-Payment Received
-     ↓
-Remaining Amount
-     ↓
-Customer Receivable
+```
 
-Supplier Payables
+### Supplier Payables
 
-Payables represent money that the business still owes to suppliers.
+```text
+Purchase Amount ──> Payment Made ──> Remaining Balance ──> Supplier Payable
 
-Purchase Amount
-     ↓
-Payment Made
-     ↓
-Remaining Amount
-     ↓
-Supplier Payable
-
-This provides a clearer view of outstanding financial obligations.
-
+```
 
 ---
 
-Damage & Stock Adjustment Management
+## Damage & Stock Adjustment Management
 
-Physical inventory can differ from recorded inventory due to damaged products, loss, counting errors, or other operational reasons.
+Physical inventory can differ from recorded inventory due to damaged products, loss, counting errors, or operational discrepancies.
 
-FlowSync provides mechanisms for recording these changes instead of directly modifying stock without context.
+FlowSync provides structured mechanisms for recording these changes instead of silently overriding stock numbers.
 
-Examples include:
+Adjustment parameters include:
 
-Damaged stock
-
-Lost stock
-
-Physical inventory corrections
-
-Manual adjustments
-
-Other stock discrepancies
-
-
-Adjustment information can include:
-
-Product
-
-Warehouse
-
-Quantity
-
-Reason
-
-Date
-
-Remarks
-
-
-This improves stock accountability and supports inventory reconciliation.
-
+* Product and target warehouse
+* Quantity discrepancy and type
+* Reason code, date, and administrative remarks
 
 ---
 
-Reports & Analytics
+## Reports & Analytics
 
-FlowSync provides reports that transform operational data into useful business information.
+FlowSync transforms transactional data into actionable business insights.
 
-Inventory Reports
+### Supported Report Categories
 
-Current stock report
-
-Low-stock report
-
-Out-of-stock report
-
-Warehouse-wise inventory
-
-Stock valuation
-
-
-Stock Movement Reports
-
-Purchase movements
-
-Sales movements
-
-Warehouse transfers
-
-Damaged stock
-
-Stock adjustments
-
-Returns
-
-
-Purchase Reports
-
-Purchase history
-
-Supplier-wise purchases
-
-Purchase order status
-
-Purchase trends
-
-
-Sales Reports
-
-Sales history
-
-Customer-wise sales
-
-Product-wise sales
-
-Sales trends
-
-
-Financial Reports
-
-Customer receivables
-
-Supplier payables
-
-Payment history
-
-Outstanding amounts
-
-
-The reporting system is designed around structured transactional data rather than manually maintained report values.
-
+* **Inventory Reports:** Current stock status, low-stock alerts, out-of-stock listings, warehouse valuation.
+* **Stock Movement Reports:** Purchase history, sales dispatch, warehouse transfers, damage audits, returns.
+* **Purchase Reports:** Supplier-wise procurement, order fulfillment status, cost trends.
+* **Sales Reports:** Customer revenue, product-wise sales velocity, sales trends.
+* **Financial Reports:** Outstanding customer receivables, supplier payables, ledger history.
 
 ---
 
-Search & Filtering
+# System Architecture
 
-Business applications can contain a large number of records, making efficient data discovery important.
+FlowSync uses a layered full-stack architecture that cleanly separates frontend presentation, API routing, business logic, and data persistence responsibilities.
 
-FlowSync provides search and filtering capabilities across major modules.
+```text
+┌────────────────────────────────────────────────────────┐
+│                        FRONTEND                        │
+│                       Flutter App                      │
+│            Screens • Widgets • State • Models          │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            │ REST API / HTTP (Firebase Auth + Node/FastAPI)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                         BACKEND                        │
+│               FastAPI / Node.js & Firebase             │
+│    API Routes • Validation • Business Logic • Auth     │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            │ Database Operations
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                         DATABASE                       │
+│                   PostgreSQL / Firebase                │
+│    Products • Inventory • Warehouses • Customers       │
+│    Suppliers • Orders • Payments • Stock Movements     │
+└────────────────────────────────────────────────────────┘
 
-Users can search and filter:
-
-Products
-
-Customers
-
-Suppliers
-
-Purchase orders
-
-Sales orders
-
-Warehouses
-
-Inventory
-
-Transactions
-
-Stock movements
-
-
-Reusable search and filtering patterns are used to maintain consistency throughout the application.
-
-
----
-
-User Interface & UX
-
-FlowSync follows a modern, business-oriented card-based UI.
-
-The interface focuses on:
-
-Clear information hierarchy
-
-Summary cards
-
-Search bars
-
-Filter chips
-
-Structured list views
-
-Status indicators
-
-Action-oriented screens
-
-Readable business metrics
-
-Consistent navigation patterns
-
-
-The same design language is used throughout modules such as:
-
-Dashboard
-     ↓
-Products
-     ↓
-Inventory
-     ↓
-Purchases
-     ↓
-Sales
-     ↓
-Customers
-     ↓
-Suppliers
-     ↓
-Reports
-
-This creates a consistent experience while allowing each module to present its own business-specific information.
+```
 
 ---
 
-System Architecture
+# Backend Architecture
 
-FlowSync follows a layered full-stack architecture that separates the frontend, backend, business logic, and database responsibilities.
+The backend exposes secured RESTful APIs and enforces strict business rules and data validation.
 
-┌───────────────────────────────────────────┐
-│                 FRONTEND                  │
-│                                           │
-│               Flutter App                 │
-│                                           │
-│     Screens • Widgets • State • Models    │
-└─────────────────────┬─────────────────────┘
-                      │
-                      │ REST API / HTTP
-                      ▼
-┌───────────────────────────────────────────┐
-│                 BACKEND                   │
-│                                           │
-│                 FastAPI                   │
-│                                           │
-│   API Routes • Validation • Business      │
-│   Logic • Authentication • Services       │
-└─────────────────────┬─────────────────────┘
-                      │
-                      │ Database Operations
-                      ▼
-┌───────────────────────────────────────────┐
-│                DATABASE                   │
-│                                           │
-│               PostgreSQL                  │
-│                                           │
-│ Products • Inventory • Warehouses         │
-│ Customers • Suppliers • Orders            │
-│ Payments • Stock Movements                │
-└───────────────────────────────────────────┘
+```text
+Frontend ──> HTTP Request ──> API Endpoint ──> Request Validation 
+    ──> Business Logic ──> Database Operation ──> Response ──> Frontend
 
-The separation of responsibilities makes the application easier to maintain, test, debug, and extend.
-
+```
 
 ---
 
-🔌 Backend Architecture
+# Database Design & Relationships
 
-The backend is responsible for exposing APIs and enforcing the application's business rules.
+The database is built on a relational model ensuring complete data integrity across business modules:
 
-A typical request follows this flow:
-
-Frontend
-   │
-   │ HTTP Request
-   ▼
-API Endpoint
-   │
-   ▼
-Request Validation
-   │
-   ▼
-Business Logic
-   │
-   ▼
-Database Operation
-   │
-   ▼
-Response
-   │
-   ▼
-Frontend
-
-The backend handles responsibilities including:
-
-API routing
-
-Request validation
-
-Response handling
-
-Business logic
-
-Database operations
-
-Inventory calculations
-
-Order processing
-
-Stock updates
-
-Payment calculations
-
-Authentication
-
-Authorization
-
-Error handling
-
-Keeping important business logic on the backend prevents critical rules from being dependent only on the client application.
-
----
-
-REST API Architecture
-
-FlowSync communicates between the frontend and backend using RESTful APIs.
-
-The API is organized around business resources.
-
-Examples include:
-
-/products
-/customers
-/suppliers
-/warehouses
-/inventory
-/purchases
-/sales
-/payments
-/reports
-/stock-movements
-
-Common HTTP operations include:
-
-GET       → Retrieve data
-POST      → Create records
-PUT       → Update records
-PATCH     → Partially update records
-DELETE    → Remove records
-
-This resource-oriented approach keeps the backend modular and allows the same backend to potentially serve multiple clients in the future.
-
----
-
-Database Design
-
-FlowSync uses a relational data model where business entities are connected through meaningful relationships.
-
-Core entities include:
-
+```text
 User
- │
  ├── Customers
  └── Suppliers
 
 Product
- │
- ├── Inventory
+ ├── Inventory Records
  ├── Purchase Order Items
  └── Sales Order Items
 
 Warehouse
- │
- └── Inventory
+ └── Inventory Items
 
 Purchase Order
- │
  ├── Supplier
  └── Purchase Order Items
 
 Sales Order
- │
  ├── Customer
  └── Sales Order Items
 
 Inventory
- │
  └── Stock Movements
 
-The relational approach helps maintain data integrity and avoids unnecessary duplication.
-
-
----
-
-Business Logic
-
-A major focus of FlowSync is implementing real business workflows instead of limiting the application to basic CRUD operations.
-
-For example, receiving a purchase can involve several coordinated operations:
-
-Purchase Order
-      ↓
-Validate Products
-      ↓
-Validate Quantities
-      ↓
-Validate Warehouse
-      ↓
-Record Purchase
-      ↓
-Update Inventory
-      ↓
-Create Stock Movement
-      ↓
-Update Supplier Payable
-
-Similarly, processing a sale can involve:
-
-Sales Order
-      ↓
-Validate Customer
-      ↓
-Validate Products
-      ↓
-Check Available Stock
-      ↓
-Create Sales Transaction
-      ↓
-Deduct Inventory
-      ↓
-Create Stock Movement
-      ↓
-Update Customer Receivable
-
-This demonstrates how a single business operation can affect multiple related entities while maintaining consistency.
+```
 
 ---
 
-Authentication & Authorization
+# Technology Stack
 
-FlowSync is designed around backend-controlled authentication and authorization.
+### Frontend
 
-Authentication establishes the identity of a user, while authorization determines which operations that user can perform.
+* **Flutter & Dart:** Cross-platform mobile application development.
+* **Material 3:** Modern, business-oriented card-based UI design.
+* **REST API Integration:** Dynamic client-server data syncing.
 
-This becomes especially important for business-critical operations such as:
+### Backend & Database
 
-Modifying inventory
+* **Python / FastAPI / Node.js:** Robust server architecture and endpoints.
+* **PostgreSQL / Firebase:** Relational database design and real-time backend synchronization.
+* **Firebase Authentication:** Secure user identity management and token validation.
 
-Creating purchase orders
+### Development & DevOps Tools
 
-Creating sales orders
-
-Updating products
-
-Managing payments
-
-Changing business records
-
-
-Security rules should therefore be enforced at the backend rather than relying exclusively on frontend restrictions.
+* **Git & GitHub:** Version control and collaboration.
+* **Postman:** Independent API endpoint testing.
+* **Android Studio & VS Code:** Primary IDE environments.
+* **Google Cloud Console:** Credential management and API restriction configuration.
 
 ---
 
-Modular Architecture
+# Project Structure
 
-The application is divided into independent but interconnected business modules.
-
-┌─────────────┐
-                    │  Dashboard  │
-                    └──────┬──────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        ▼                  ▼                  ▼
-    Products           Inventory           Reports
-        │                  │                  │
-        └──────────┬───────┴──────────┬───────┘
-                   ▼                  ▼
-              Purchases            Sales
-                   │                  │
-                   ▼                  ▼
-               Suppliers          Customers
-                   │                  │
-                   └────────┬─────────┘
-                            ▼
-                         Payments
-
-This modular approach makes it easier to develop, maintain, test, and extend individual parts of the system.
-
-
----
-
-Technology Stack
-
-Frontend
-
-Flutter
-
-Dart
-
-REST API integration
-
-Reusable UI components
-
-Backend-driven data
-
-State management
-
-Modern card-based UI
-
-
-Backend
-
-Python
-
-FastAPI
-
-RESTful APIs
-
-Business logic
-
-Request validation
-
-Authentication & authorization
-
-Database integration
-
-
-Database
-
-PostgreSQL
-
-Relational database design
-
-Entity relationships
-
-Transaction-oriented data modelling
-
-
-Development Tools
-
-Git
-
-GitHub
-
-Postman
-
-Android Studio
-
-VS Code
-
-
-
----
-
-Project Structure
-
-A high-level representation of the project architecture:
-
+```text
 FlowSync/
 │
 ├── frontend/
@@ -977,367 +447,115 @@ FlowSync/
 ├── README.md
 └── .gitignore
 
-The exact structure may vary according to implementation, but the architecture follows the principle of separating UI, API, business logic, and data-access responsibilities.
+```
 
 ---
 
-End-to-End Business Flow
+# Technical Diary & Engineering Journey
 
-A complete purchase-to-inventory workflow can be represented as:
+Throughout the development of FlowSync, several complex engineering challenges were solved to ensure reliability in production:
 
-Supplier
-   ↓
-Purchase Order
-   ↓
-Products & Quantities
-   ↓
-Goods Received
-   ↓
-Warehouse
-   ↓
-Inventory Updated
-   ↓
-Stock Movement Recorded
-   ↓
-Supplier Payable Updated
-
-A complete sales workflow:
-
-Customer
-   ↓
-Sales Order
-   ↓
-Products & Quantities
-   ↓
-Stock Availability Check
-   ↓
-Inventory Deduction
-   ↓
-Stock Movement Recorded
-   ↓
-Payment Recorded
-   ↓
-Customer Receivable Updated
-
-A warehouse transfer:
-
-Source Warehouse
-       ↓
-   Stock Transfer
-       ↓
-Destination Warehouse
-       ↓
-Inventory Updated
-       ↓
-Movement Recorded
-
-These workflows demonstrate how the different modules of FlowSync work together as one integrated business system.
+1. **Firebase Authentication on Native Release Builds:** Resolved persistent *"check your internet connection"* errors on physical devices by correcting Google Cloud Console project scopes, generating proper SHA-1 and SHA-256 debug/release fingerprints (`7E:52:2C:07:0C:A4:A6:EA:EC:B2:67:DD:61:85:7D:0F:BE:B0:22:8C`), configuring valid API key bindings (`Identity Toolkit API` / `Google Cloud APIs`), and updating `google-services.json`.
+2. **Multi-Warehouse Stock Consistency:** Decoupled inventory from single global counters, ensuring stock changes correctly reference specific physical warehouses and maintain immutable audit trails via stock movements.
+3. **Cross-Module Transaction Integrity:** Synchronized sales and purchase workflows so that placing an order automatically updates inventory levels, logs stock movements, and recalculates customer receivables or supplier payables in real time.
 
 ---
 
-API Testing
+# Screenshots
 
-Backend APIs can be tested independently using tools such as Postman.
+### Login Page
 
-API testing is used to verify:
+### Purchase Module
 
-Request validation
+### Sales Module
 
-Response structures
-
-Authentication
-
-CRUD operations
-
-Business rules
-
-Error handling
-
-Database updates
-
-Inventory calculations
-
-Testing APIs independently also helps identify backend issues before integrating functionality with the frontend.
+### PDF Billing
 
 ---
 
-🚧 Technical Challenges
+# Getting Started & Installation
 
-Developing FlowSync involved solving several practical software engineering challenges.
+## Prerequisites
 
-Inventory Consistency
+Ensure you have the following installed on your machine:
 
-Inventory cannot simply be modified from multiple screens without considering the underlying business operation.
+* Flutter SDK & Dart SDK
+* Python (for backend services)
+* PostgreSQL
+* Git
+* Android Studio or VS Code
 
-Stock changes need to be associated with valid events such as purchases, sales, transfers, or adjustments.
+## 1. Clone the Repository
 
-Multi-Warehouse Inventory
-
-The same product may exist in several warehouses.
-
-Therefore, inventory needs to be tracked at the appropriate warehouse level rather than relying only on a single global stock quantity.
-
-Transaction Relationships
-
-Products, customers, suppliers, orders, warehouses, payments, and stock movements are interconnected.
-
-The database must preserve these relationships while avoiding unnecessary duplication.
-
-Backend-Driven Application
-
-Business information should come from the backend and database instead of being hardcoded into the frontend.
-
-This allows the UI to reflect actual business data.
-
-Reusable Components
-
-Customers and Suppliers share similar interaction patterns while having different business metrics.
-
-Reusable UI components and consistent design patterns help avoid unnecessary duplication.
-
-Cross-Module Business Logic
-
-A single operation can affect multiple modules.
-
-For example:
-
-Sales
-  ↓
-Inventory
-  ↓
-Stock Movement
-  ↓
-Customer Balance
-
-Implementing such workflows requires careful handling of business rules and data consistency.
-
----
-
-Reports & Decision Support
-
-FlowSync is designed not only to store business information but also to make that information useful.
-
-The reporting layer can help answer questions such as:
-
-Which products are running low?
-
-How much stock exists in each warehouse?
-
-Which products are being sold most frequently?
-
-How much has been purchased from a supplier?
-
-Which customers have outstanding payments?
-
-How much is payable to suppliers?
-
-Where has stock moved?
-
-How much inventory has been damaged or adjusted?
-
-This transforms raw transactional data into information that can support operational decisions.
-
----
-
-Future Enhancements
-
-The architecture provides a foundation for additional capabilities, including:
-
-Role-based access control
-
-Advanced permission management
-
-Automated invoice generation
-
-PDF and Excel report exports
-
-Barcode / QR code scanning
-
-Low-stock notifications
-
-Payment due reminders
-
-WhatsApp / SMS notifications
-
-Advanced sales analytics
-
-Demand forecasting
-
-Inventory valuation
-
-Automated stock reconciliation
-
-Cloud synchronization
-
-Offline-first functionality
-
-Detailed audit logs
-
-Advanced financial reporting
-
-Advanced business dashboards
-
----
-
-Screenshots
-
-##Login Page
-
-<img width="1344" height="2992" alt="Login_Page" src="https://github.com/user-attachments/assets/21785818-cb36-4e57-b0de-e1a5cacf2d0b" />
-
-
-##Purchase 
-
-<img width="1344" height="2992" alt="Purchase" src="https://github.com/user-attachments/assets/82a3f8ab-ec9f-47e6-b1d3-dc44d14f12a3" />
-
-
-##Sales 
-
-<img width="1344" height="2992" alt="Sales" src="https://github.com/user-attachments/assets/6e929169-a871-4db9-9263-14d276e0e2d8" />
-
-
-##PDF Billing
-
-<img width="1344" height="2992" alt="pdf_billing" src="https://github.com/user-attachments/assets/f2c2a612-6a2e-429a-9a30-a8c79b584ac1" />
-
----
-
-Getting Started
-
-Prerequisites
-
-Make sure the following are installed:
-
-Flutter SDK
-
-Dart SDK
-
-Python
-
-PostgreSQL
-
-Git
-
-Android Studio or VS Code
-
-
-
----
-
-Installation
-
-1. Clone the Repository
-
-git clone <repository-url>
+```bash
+git clone [https://github.com/your-username/FlowSync.git](https://github.com/your-username/FlowSync.git)
 cd FlowSync
 
+```
 
----
-
-2. Backend Setup
+## 2. Backend Setup
 
 Navigate to the backend directory:
 
+```bash
 cd backend
 
-Create a virtual environment:
+```
 
+Create and activate a virtual environment:
+
+```bash
 python -m venv venv
-
-Windows
-
+# Windows:
 venv\Scripts\activate
-
-macOS / Linux
-
+# macOS / Linux:
 source venv/bin/activate
 
-Install the required dependencies:
+```
 
+Install dependencies and start the server:
+
+```bash
 pip install -r requirements.txt
-
-Configure the required environment variables and database connection.
-
-Start the FastAPI server:
-
 uvicorn app.main:app --reload
 
+```
 
----
-
-Frontend Setup
+## 3. Frontend Setup
 
 Navigate to the frontend directory:
 
+```bash
 cd frontend
-
-Install Flutter dependencies:
-
 flutter pub get
-
-Run the application:
-
 flutter run
 
-Make sure the frontend is configured with the correct backend API URL.
-
-
----
-
-Development Approach
-
-FlowSync was developed using a structured software engineering workflow:
-
-Requirement Analysis
-        ↓
-Business Workflow Analysis
-        ↓
-Database Design
-        ↓
-API Design
-        ↓
-Backend Development
-        ↓
-Frontend Development
-        ↓
-API Integration
-        ↓
-Testing & Debugging
-        ↓
-UI/UX Refinement
-
-The development process focused on understanding the underlying business requirements before implementing individual screens.
-
+```
 
 ---
 
+# Contributing
 
----
-
- Contributing
-
-Contributions and suggestions are welcome.
+Contributions, bug reports, and feature suggestions are always welcome!
 
 1. Fork the repository.
-2. Create a new branch.
-3. Make your changes.
-4. Commit your changes.
-5. Push the branch.
-6. Open a Pull Request.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
 ---
 
- License
+# Download & Test the App (Release APK)
 
-This project is developed for business-management and software-engineering purposes.
+You can directly download and test the physical Android release build of FlowSync from the link below:
 
-If this project is distributed publicly, an appropriate open-source license can be added here.
+* **[Download FlowSync Release APK via Google Drive](https://drive.google.com/drive/folders/1KZ7TwCDymUL2U2gt1_b5SO_7L91Sfga2?usp=drive_link)** *(Directly installable on physical Android devices)*
 
+# License
+
+Developed for business management and advanced software engineering demonstration purposes.
 
 ---
 
- FlowSync
-
-Manage Products. Control Inventory. Simplify Business.
-
-FlowSync connects products, inventory, warehouses, purchases, sales, customers, suppliers, payments, and reports into one unified business management platform.
+**FlowSync** — *Manage Products. Control Inventory. Simplify Business.*

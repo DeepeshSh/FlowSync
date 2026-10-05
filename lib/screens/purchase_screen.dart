@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/purchase_model.dart';
 import '../services/purchase_service.dart';
+import '../utils/app_theme.dart';
 import 'add_purchase_screen.dart';
 import 'purchase_details_screen.dart';
 
@@ -16,8 +17,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   List<Purchase> filteredPurchases = [];
   bool isLoading = true;
   final searchController = TextEditingController();
-  
-  String selectedTab = "All"; 
+
+  String selectedTab = "All";
   final List<String> filterTabs = ["All", "Paid", "Partially Paid", "Pending", "Draft"];
   DateTimeRange? selectedDateRange;
 
@@ -27,7 +28,6 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     loadPurchases();
   }
 
-  // Safely fetch amount
   // Safely calculate total amount even if backend returned totalAmount: 0
   double _getSafeAmount(Purchase purchase) {
     if (purchase.totalAmount > 0) return purchase.totalAmount;
@@ -74,7 +74,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       debugPrint("Fetching purchases from service...");
       final data = await PurchaseService().getPurchases();
       debugPrint("Fetched ${data.length} purchase orders successfully.");
-      
+
       if (!mounted) return;
       setState(() {
         purchases = data;
@@ -84,12 +84,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     } catch (e, stackTrace) {
       debugPrint("Error loading purchases: $e");
       debugPrint("Stack trace: $stackTrace");
-      
+
       if (!mounted) return;
       setState(() {
         isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Failed to fetch purchases: $e"),
@@ -162,7 +162,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       case 'paid':
         return const Color(0xFF10B981);
       case 'partially paid':
-        return const Color(0xFF2563EB);
+        return const Color(0xFF0F294A);
       case 'draft':
         return const Color(0xFF64748B);
       default:
@@ -175,9 +175,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       case 'paid':
         return const Color(0xFFECFDF5);
       case 'partially paid':
-        return const Color(0xFFEFF6FF);
+        return const Color(0xFFE8EEF5);
       case 'draft':
-        return const Color(0xFFF1F5F9);
+        return const Color(0xFFE2E8F0);
       default:
         return const Color(0xFFFFF7ED);
     }
@@ -218,15 +218,14 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.maybePop(context),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF0F172A),
-                          size: 18,
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, size: 22, color: AppColors.primary),
+                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
-                      ),
-                      const SizedBox(width: 16),
+                        const SizedBox(width: 8),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +301,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                     height: 52,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x05000000),
@@ -358,11 +357,14 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                               children: [
                                 const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF3B82F6)),
                                 const SizedBox(width: 8),
-                                Text(
-                                  selectedDateRange == null
-                                      ? "Date Range"
-                                      : "${selectedDateRange!.start.day}/${selectedDateRange!.start.month} - ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}",
-                                  style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500),
+                                Expanded(
+                                  child: Text(
+                                    selectedDateRange == null
+                                        ? "Date Range"
+                                        : "${selectedDateRange!.start.day}/${selectedDateRange!.start.month} - ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}",
+                                    style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
@@ -382,6 +384,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: selectedTab,
+                              isExpanded: true,
                               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
                               style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500),
                               onChanged: (String? newValue) {
@@ -393,7 +396,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                               items: filterTabs.map<DropdownMenuItem<String>>((String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value == "All" ? "All Statuses" : value),
+                                  child: Text(
+                                    value == "All" ? "All Statuses" : value,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 );
                               }).toList(),
                             ),
@@ -470,7 +476,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: const Color(0xFFF1F5F9)),
                                 boxShadow: const [
                                   BoxShadow(
@@ -513,7 +519,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFEFF6FF),
+                                                color: const Color(0xFFE8EEF5),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
@@ -579,7 +585,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF8FAFC),
+                                          color: const Color(0xFFF7F9FC),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Row(
@@ -614,8 +620,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           );
           await refreshPurchases();
         },
-        backgroundColor: const Color(0xFF2563EB),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        backgroundColor: const Color(0xFF0F294A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         icon: const Icon(Icons.add, color: Colors.white, size: 20),
         label: const Text(
           "New Purchase",
@@ -631,7 +637,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0x99E2E8F0)),
         ),
         child: Row(
@@ -675,7 +681,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0x99E2E8F0)),
       ),
       child: Row(

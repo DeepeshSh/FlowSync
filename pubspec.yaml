@@ -1,4 +1,4 @@
-name: inventory2
+name: FlowSync
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -43,6 +43,10 @@ dependencies:
   open_filex: ^4.7.0
 
   intl: ^0.20.2
+  flutter_local_notifications: ^17.2.2
+  google_sign_in: ^6.2.1
+  firebase_auth: ^6.7.0
+  firebase_core: ^4.15.0
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +98,7 @@ flutter:
      - lib/assets/images/addproductheader.png  
      - lib/assets/images/purchase_screen_header.png
      - lib/assets/images/sales_screen_header.png
+     - lib/assets/images/dashboard_screen_header.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

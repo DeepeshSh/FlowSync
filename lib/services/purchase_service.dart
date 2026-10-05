@@ -4,13 +4,7 @@ import '../config/api_config.dart';
 import '../models/purchase_model.dart';
 
 class PurchaseService {
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ),
-  );
+  final Dio dio = ApiConfig.dio;
 
   /// Fetch all Purchase Orders
   Future<List<Purchase>> getPurchases() async {

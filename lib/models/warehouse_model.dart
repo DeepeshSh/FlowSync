@@ -35,22 +35,23 @@ class Warehouse {
 
   factory Warehouse.fromJson(Map<String, dynamic> json) {
     return Warehouse(
-      id: json["_id"] ?? "",
-      name: json["name"] ?? "",
-      code: json["code"] ?? "",
-      address: json["address"] ?? "",
-      city: json["city"] ?? "",
-      contactPerson: json["contactPerson"] ?? "",
-      phone: json["phone"] ?? "",
+      // Checks both "_id" and "id" safely
+      id: json["_id"]?.toString() ?? json["id"]?.toString() ?? "",
+      name: json["name"]?.toString() ?? "",
+      code: json["code"]?.toString() ?? "",
+      address: json["address"]?.toString() ?? "",
+      city: json["city"]?.toString() ?? "",
+      contactPerson: json["contactPerson"]?.toString() ?? "",
+      phone: json["phone"]?.toString() ?? "",
       isActive: json["isActive"] ?? true,
-      notes: json["notes"] ?? "",
-      warehouseType: json["warehouseType"] ?? "Secondary",
+      notes: json["notes"]?.toString() ?? "",
+      warehouseType: json["warehouseType"]?.toString() ?? "Secondary",
       
       // Dynamic fallback updates for dashboard analytics
-      productsCount: json["productsCount"] ?? 0,
-      stockValue: (json["stockValue"] ?? 0).toDouble(),
-      totalStockUnits: json["totalStockUnits"] ?? 0,
-      lowStockItems: json["lowStockItems"] ?? 0,
+      productsCount: (json["productsCount"] is num) ? json["productsCount"].toInt() : 0,
+      stockValue: (json["stockValue"] is num) ? (json["stockValue"] as num).toDouble() : 0.0,
+      totalStockUnits: (json["totalStockUnits"] is num) ? json["totalStockUnits"].toInt() : 0,
+      lowStockItems: (json["lowStockItems"] is num) ? json["lowStockItems"].toInt() : 0,
     );
   }
 
@@ -66,8 +67,6 @@ class Warehouse {
       "isActive": isActive,
       "notes": notes,
       "warehouseType": warehouseType,
-      
-      // Upstream synchronization keys
       "productsCount": productsCount,
       "stockValue": stockValue,
       "totalStockUnits": totalStockUnits,

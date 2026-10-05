@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../models/variant_model.dart';
 import '../models/warehouse_model.dart';
-
 import '../services/variant_service.dart';
 import '../services/warehouse_service.dart';
+import '../utils/app_theme.dart';
+import '../widgets/custom_app_bar.dart';
 
 class AddEditVariantScreen extends StatefulWidget {
   final Product product;
@@ -168,43 +169,41 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
     super.dispose();
   }
 
-  // Modern Input Field Decoration Builder
   InputDecoration inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-      prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+      labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+      prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 18),
       filled: true,
-      fillColor: const Color(0xFFF8FAFC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.cardBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.2),
       ),
     );
   }
 
-  // Wrapper layout for sub-sections
   Widget _buildSectionCard({required String title, required List<Widget> children}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,76 +212,42 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
             title,
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF475569),
-              letterSpacing: 0.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Divider(color: Color(0xFFF1F5F9), height: 1),
-          ),
+          const SizedBox(height: 12),
           ...children,
         ],
       ),
     );
   }
 
-  // Minimalist Core Header Component
-  Widget _buildHeader() {
+  Widget _buildProductHeaderBanner() {
     return Container(
       width: double.infinity,
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(8, 8, 20, 16),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  widget.variant == null ? "Add Variant" : "Edit Variant",
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.product.name,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.product.name,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Parent SKU: ${widget.product.sku}",
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            "Parent SKU: ${widget.product.sku}",
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -290,69 +255,75 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
+      appBar: CustomAppBar(
+        title: widget.variant == null ? "Add Variant" : "Edit Variant",
+      ),
       body: Column(
         children: [
-          _buildHeader(),
+          _buildProductHeaderBanner(),
+          const Divider(height: 1, color: AppColors.cardBorder),
           Expanded(
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 child: Column(
                   children: [
-                    // Section 1: Identity & Key Identifiers
                     _buildSectionCard(
-                      title: "VARIANT IDENTITY",
+                      title: "Variant Identity",
                       children: [
-                        const SizedBox(height: 8),
                         TextFormField(
                           controller: variantNameController,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                           validator: (v) => (v == null || v.trim().isEmpty) ? "Required" : null,
                           decoration: inputDecoration("Variant Title (e.g., XL / Black)", Icons.layers_outlined),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: skuController,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                           validator: (v) => (v == null || v.trim().isEmpty) ? "Required" : null,
                           decoration: inputDecoration("Variant SKU", Icons.qr_code_outlined),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: barcodeController,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                           decoration: inputDecoration("Barcode", Icons.barcode_reader),
                         ),
                       ],
                     ),
-
-                    // Section 2: Logistics & Inventory Management
                     _buildSectionCard(
-                      title: "LOGISTICS & STOCK",
+                      title: "Logistics & Stock",
                       children: [
-                        const SizedBox(height: 8),
                         DropdownButtonFormField<Warehouse>(
                           value: selectedWarehouse,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                           decoration: inputDecoration("Select Warehouse", Icons.warehouse_outlined),
                           items: warehouses.map((warehouse) {
                             return DropdownMenuItem(
                               value: warehouse,
-                              child: Text(warehouse.name, style: const TextStyle(fontSize: 15)),
+                              child: Text(warehouse.name, style: const TextStyle(fontSize: 13)),
                             );
                           }).toList(),
                           onChanged: (value) => setState(() => selectedWarehouse = value),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: storageController,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                           decoration: inputDecoration("Storage Location / Bin Number", Icons.location_on_outlined),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
                               child: TextFormField(
                                 controller: stockController,
                                 keyboardType: TextInputType.number,
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("Initial Stock", Icons.inventory_2_outlined),
                               ),
                             ),
@@ -361,6 +332,7 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
                               child: TextFormField(
                                 controller: lowStockController,
                                 keyboardType: TextInputType.number,
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("Alert Threshold", Icons.warning_amber_rounded),
                               ),
                             ),
@@ -368,18 +340,16 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
                         ),
                       ],
                     ),
-
-                    // Section 3: Pricing Structure
                     _buildSectionCard(
-                      title: "PRICING & TAXATION",
+                      title: "Pricing & Taxation",
                       children: [
-                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
                               child: TextFormField(
                                 controller: purchaseController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("Purchase Cost", Icons.shopping_bag_outlined),
                               ),
                             ),
@@ -388,18 +358,20 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
                               child: TextFormField(
                                 controller: sellingController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("Selling Price", Icons.sell_outlined),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
                               child: TextFormField(
                                 controller: mrpController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("MRP", Icons.payments_outlined),
                               ),
                             ),
@@ -408,6 +380,7 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
                               child: TextFormField(
                                 controller: gstController,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
                                 decoration: inputDecoration("GST %", Icons.percent_outlined),
                               ),
                             ),
@@ -415,59 +388,64 @@ class _AddEditVariantScreenState extends State<AddEditVariantScreen> {
                         ),
                       ],
                     ),
-
-                    // Activation Switch Block
                     Container(
                       margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.cardBorder),
                       ),
                       child: SwitchListTile(
                         value: isActive,
-                        activeColor: const Color(0xFF2563EB),
+                        activeColor: AppColors.primary,
                         title: const Text(
                           "Make variant visible and active",
-                          style: TextStyle(fontSize: 14, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         onChanged: (value) => setState(() => isActive = value),
                       ),
                     ),
-
-                    // Modern Primary Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : saveVariant,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          disabledBackgroundColor: const Color(0xFF93C5FD),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                              )
-                            : Text(
-                                widget.variant == null ? "Create Variant" : "Save Changes",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                        ),
-                    ),
-                    const SizedBox(height: 20),
                   ],
                 ),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: AppColors.cardBorder)),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : saveVariant,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        widget.variant == null ? "Create Variant" : "Save Changes",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
               ),
             ),
           ),

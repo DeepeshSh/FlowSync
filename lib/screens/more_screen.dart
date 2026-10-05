@@ -1,478 +1,760 @@
 import 'package:flutter/material.dart';
 
+import '../models/app_user.dart';
+import '../services/auth_service.dart';
+import '../utils/app_theme.dart';
+import 'business_profile_screen.dart';
 import 'categories_screen.dart';
-import 'suppliers_screen.dart';
 import 'customers_screen.dart';
+import 'invoices_screen.dart';
+import 'login_screen.dart';
+import 'parties_screen.dart';
+import 'profile_screen.dart';
+import 'suppliers_screen.dart';
 import 'warehouse_screen.dart';
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const Color textPrimary = Color(0xFF0F172A);
-    const Color textMuted = Color(0xFF64748B);
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
+  State<MoreScreen> createState() => _MoreScreenState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // 1. Theme Continuous Flow Background Gradient
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFE2EAF2),
-                    Color(0xFFF1F5F9),
-                    Colors.white,
-                  ],
-                  stops: [0.0, 0.35, 0.7],
+class _MoreScreenState extends State<MoreScreen> {
+  AppUser? _cachedUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService().getCachedUser();
+    if (mounted) {
+      setState(() {
+        _cachedUser = user;
+      });
+    }
+  }
+
+  Future<void> _navigateToProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
+    _loadUser();
+  }
+
+  Future<void> _navigateToBusinessProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BusinessProfileScreen()),
+    );
+    _loadUser();
+  }
+
+  void _showInventoryAlertsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_active_rounded,
+                      color: Color(0xFFD97706),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "Inventory Alerts",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      Text(
+                        "Real-time stock threshold rules",
+                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _alertRuleItem(
+                icon: Icons.warning_amber_rounded,
+                color: const Color(0xFFEF4444),
+                title: "Low Stock Warning",
+                description: "Items with stock ≤ low stock threshold (default: 5 units) are highlighted in amber/red.",
+              ),
+              const SizedBox(height: 12),
+              _alertRuleItem(
+                icon: Icons.remove_shopping_cart_outlined,
+                color: const Color(0xFFF97316),
+                title: "Zero Stock Alert",
+                description: "Products with 0 stock prevent bill generation until restocked via purchase order.",
+              ),
+              const SizedBox(height: 12),
+              _alertRuleItem(
+                icon: Icons.sync_problem_rounded,
+                color: const Color(0xFF0F294A),
+                title: "Reorder Recommendation",
+                description: "Suppliers are suggested automatically based on preferred catalog history.",
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F294A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    "Got it",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAppInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EEF5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Image.asset(
+                "lib/assets/images/logo1.png",
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Icon(
+                  Icons.water_drop_rounded,
+                  color: Color(0xFF0F294A),
+                  size: 36,
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+            const Text(
+              "FlowSync",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              "Version 1.0.0 (Build 1)",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F294A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "The complete inventory, billing, and warehouse management suite purpose-built for modern sanitary ware, plumbing, tiles, and fittings enterprises.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Color(0xFF64748B),
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F9FC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Text(
+                "© 2026 FlowSync Technologies",
+                style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              "Close",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
+        ],
+      ),
+    );
+  }
 
-          // 2. Main Scrollable View Area
-          Positioned.fill(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(), // Clamps scrolling boundary edge-to-edge
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Unified App Header Row with Manual Status Bar Padding
-                  Container(
-                    width: double.infinity,
-                    height: 110 + statusBarHeight,
-                    padding: EdgeInsets.only(top: statusBarHeight),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // Left: Back button + Text Column
-                        Positioned(
-                          left: 20,
-                          bottom: 4, // Aligned lower to sit closer to the profile card
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              GestureDetector(
-                                onTap: () => Navigator.maybePop(context),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4.0),
-                                  child: Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: textPrimary,
-                                    size: 20,
-                                  ),
-                                ),
+  void _showHelpSupportSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                "Help & Support",
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "Need assistance with your sanitary inventory or sync?",
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20),
+              _supportItem(
+                icon: Icons.email_outlined,
+                title: "Email Support",
+                subtitle: "support@flowsync.in",
+              ),
+              const SizedBox(height: 14),
+              _supportItem(
+                icon: Icons.phone_outlined,
+                title: "Helpline",
+                subtitle: "+91 98765 43210 (Mon-Sat, 9AM - 7PM)",
+              ),
+              const SizedBox(height: 14),
+              _supportItem(
+                icon: Icons.menu_book_outlined,
+                title: "Documentation & FAQ",
+                subtitle: "docs.flowsync.in/guide",
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F294A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    "Done",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        title: const Text(
+          "Logout from FlowSync?",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: const Text(
+          "Are you sure you want to end your current session? You will need to login again to manage your inventory.",
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text(
+              "Logout",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      await AuthService().logout();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    }
+  }
+
+  String _getInitials(String name) {
+    if (name.trim().isEmpty) return "DS";
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return "${parts[0][0]}${parts[1][0]}".toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = _cachedUser?.name.isNotEmpty == true ? _cachedUser!.name : "Deepesh Shrivastava";
+    final displayBusiness = _cachedUser?.businessName.isNotEmpty == true ? _cachedUser!.businessName : "FlowSync Traders";
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE5ECF4), Color(0xFFF1F5F9), Color(0xFFFFFFFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.0, 0.35, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 4,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ================= HEADER SECTION =================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, size: 22, color: AppColors.primary),
+                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text(
+                              "More",
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.5,
                               ),
-                              const SizedBox(width: 16),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    "More",
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: textPrimary,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    "Manage your business & app",
-                                    style: TextStyle(
-                                      color: textMuted,
-                                      fontSize: 12.5,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Manage your business and app seamlessly",
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 13,
+                                height: 1.25,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 165,
+                        height: 102,
+                        child: Image.asset(
+                          'lib/assets/images/homeimage (2).png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerRight,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.storefront_rounded, color: Color(0xFF0F294A), size: 28),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                        // Right: Enlarged Assets resting directly down onto the profile card
-                        Positioned(
-                          right: 16,
-                          bottom: 0,
-                          child: SizedBox(
-                            width: 150,
-                            height: 110,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              clipBehavior: Clip.none,
+                // ================= PROFILE INFORMATION CARD =================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                  child: InkWell(
+                    onTap: _navigateToProfile,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x03000000),
+                            spreadRadius: 1,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _getInitials(displayName),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Positioned(
-                                  right: 0,
-                                  top: 15,
-                                  child: Container(
-                                    width: 120,
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE0F2FE).withOpacity(0.75),
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(50),
-                                        topRight: Radius.circular(40),
-                                        bottomLeft: Radius.circular(45),
-                                        bottomRight: Radius.circular(55),
-                                      ),
+                                Text(
+                                  displayName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  displayBusiness,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: AppColors.cardBorder),
+                                  ),
+                                  child: const Text(
+                                    "Active Enterprise Node",
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
                                     ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: -10, // Rest perfectly on the top of the card layer
-                                  right: -5,
-                                  child: Image.asset(
-                                    "lib/assets/images/homeimage (2).png",
-                                    width: 165, // Increased size
-                                    height: 135,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const SizedBox(),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 35,
-                                  right: 90,
-                                  child: Image.asset(
-                                    "lib/assets/images/paper_plane.png",
-                                    width: 58, // Increased size
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const SizedBox(),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+                          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 18),
 
-                  const SizedBox(height: 10), // Decreased distance down to the card layout
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                // ================= BUSINESS SECTION =================
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                  child: Text(
+                    "Business",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x03000000),
+                          spreadRadius: 1,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        )
+                      ],
+                    ),
                     child: Column(
                       children: [
-                        // Profile Information Card Segment
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 68,
-                                height: 68,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFF3B82F6),
-                                      Color(0xFF1D4ED8),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    "DS",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Deepesh Shrivastava",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    const Text(
-                                      "FlowSync Traders",
-                                      style: TextStyle(
-                                        color: textMuted,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFECFDF5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Icon(
-                                            Icons.workspace_premium_rounded,
-                                            size: 14,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            "Owner",
-                                            style: TextStyle(
-                                              color: Color(0xFF047857),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right_rounded, color: textMuted),
-                            ],
-                          ),
+                        _menuTile(
+                          icon: Icons.groups_rounded,
+                          title: "Parties & CRM",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PartiesScreen())),
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // --- Business Menu Area ---
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: const Padding(
-                            padding: EdgeInsets.only(left: 4, bottom: 10),
-                            child: Text(
-                              "Business",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textPrimary,
-                              ),
-                            ),
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.receipt_long_rounded,
+                          title: "Billing & Invoices",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoicesScreen())),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.01),
-                                blurRadius: 8,
-                              )
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _menuTile(
-                                icon: Icons.category_outlined,
-                                title: "Categories",
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen())),
-                              ),
-                              const Divider(height: 1, indent: 60, color: Color(0xFFF1F5F9)),
-                              _menuTile(
-                                icon: Icons.local_shipping_outlined,
-                                title: "Suppliers",
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuppliersScreen())),
-                              ),
-                              const Divider(height: 1, indent: 60, color: Color(0xFFF1F5F9)),
-                              _menuTile(
-                                icon: Icons.people_outline_rounded,
-                                title: "Customers",
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersScreen())),
-                              ),
-                              const Divider(height: 1, indent: 60, color: Color(0xFFF1F5F9)),
-                              _menuTile(
-                                icon: Icons.warehouse_outlined,
-                                title: "Warehouses",
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WarehouseScreen())),
-                              ),
-                            ],
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.category_outlined,
+                          title: "Categories",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen())),
                         ),
-
-                        const SizedBox(height: 20),
-
-                        // --- Support Menu Area ---
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: const Padding(
-                            padding: EdgeInsets.only(left: 4, bottom: 10),
-                            child: Text(
-                              "Support",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textPrimary,
-                              ),
-                            ),
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.local_shipping_outlined,
+                          title: "Suppliers",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuppliersScreen())),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.01),
-                                blurRadius: 8,
-                              )
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _menuTile(
-                                icon: Icons.headset_mic_outlined,
-                                title: "Help & Support",
-                                onTap: () {},
-                              ),
-                              const Divider(height: 1, indent: 60, color: Color(0xFFF1F5F9)),
-                              _menuTile(
-                                icon: Icons.info_outline_rounded,
-                                title: "About FlowSync",
-                                onTap: () {},
-                              ),
-                            ],
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.people_outline_rounded,
+                          title: "Customers",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersScreen())),
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // --- Logout Tile Action ---
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFFEE2E2)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEE2E2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      "Logout",
-                                      style: TextStyle(
-                                        color: Color(0xFF991B1B),
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      "Sign out from your account safely",
-                                      style: TextStyle(color: Color(0xFFEF4444), fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right_rounded, color: Color(0xFF991B1B)),
-                            ],
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.warehouse_outlined,
+                          title: "Warehouses",
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WarehouseScreen())),
                         ),
                       ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 20),
 
-                  const SizedBox(height: 28),
-
-                  // WAVEY FOOTER: Positioned at the very end of the scroll container spanning edge-to-edge
-                  SizedBox(
-                    height: 75,
-                    width: double.infinity,
-                    child: Stack(
-                      clipBehavior: Clip.none,
+                // ================= SETTINGS & TOOLS SECTION =================
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                  child: Text(
+                    "Settings & Tools",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x03000000),
+                          spreadRadius: 1,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Column(
                       children: [
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: ClipPath(
-                            clipper: WaveClipper(),
-                            child: Container(
-                              height: 55,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFFDFF8EF),
-                                    Color(0xFFEAF7F3),
-                                    Color(0xFFD6F3EA),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                        _menuTile(
+                          icon: Icons.person_outline_rounded,
+                          title: "Profile & Account",
+                          onTap: _navigateToProfile,
                         ),
-                        Positioned(
-                          left: -5,
-                          bottom: 0,
-                          child: Image.asset(
-                            "lib/assets/images/grass-removebg-preview.png",
-                            height: 65,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const SizedBox(),
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.storefront_outlined,
+                          title: "Business Settings / Firm Profile",
+                          onTap: _navigateToBusinessProfile,
                         ),
-                        Positioned(
-                          right: 5,
-                          bottom: -15,
-                          child: Image.asset(
-                            "lib/assets/images/gears-removebg-preview.png",
-                            height: 95,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const SizedBox(),
-                          ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.notifications_active_outlined,
+                          title: "Inventory Alerts",
+                          onTap: _showInventoryAlertsSheet,
+                        ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.info_outline_rounded,
+                          title: "App Information & Version",
+                          onTap: _showAppInfoDialog,
+                        ),
+                        const Divider(height: 1, indent: 60, color: AppColors.cardBorder),
+                        _menuTile(
+                          icon: Icons.headset_mic_outlined,
+                          title: "Help & Support",
+                          onTap: _showHelpSupportSheet,
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 22),
+
+                // ================= LOGOUT TILE =================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InkWell(
+                    onTap: _handleLogout,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFEE2E2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  "Logout",
+                                  style: TextStyle(
+                                    color: Color(0xFF991B1B),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  "Sign out from your account safely",
+                                  style: TextStyle(color: Color(0xFFEF4444), fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded, color: Color(0xFF991B1B)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: Text(
+                    "FlowSync ERP v2.4 • Node active",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      color: AppColors.textSecondary.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 100),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -482,45 +764,107 @@ class MoreScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEFF6FF),
-          borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        minLeadingWidth: 0,
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
         ),
-        child: Icon(icon, color: const Color(0xFF3B82F6), size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14.5,
-          color: Color(0xFF1E293B),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.textPrimary,
+          ),
         ),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 18),
+        onTap: onTap,
       ),
-      trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
-      onTap: onTap,
     );
   }
-}
 
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(0, 20);
-    path.quadraticBezierTo(size.width * 0.15, 0, size.width * 0.30, 15);
-    path.quadraticBezierTo(size.width * 0.45, 30, size.width * 0.60, 10);
-    path.quadraticBezierTo(size.width * 0.75, -5, size.width, 20);
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
+  static Widget _alertRuleItem({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF64748B),
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  static Widget _supportItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8EEF5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: const Color(0xFF0F294A), size: 20),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }

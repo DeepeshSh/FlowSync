@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../models/sale_model.dart';
 import '../services/pdf_service.dart';
+import '../utils/app_theme.dart';
+import '../widgets/custom_app_bar.dart';
 
 class SaleDetailsScreen extends StatelessWidget {
   final Sale sale;
@@ -10,81 +13,58 @@ class SaleDetailsScreen extends StatelessWidget {
     required this.sale,
   });
 
-  Color _getStatusColor(String status) {
+  Map<String, dynamic> _getStatusStyle(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return const Color(0xFF10B981);
+        return {
+          'textColor': const Color(0xFF10B981),
+          'bgColor': const Color(0xFFECFDF5),
+          'borderColor': const Color(0xFFA7F3D0),
+        };
       case 'partially paid':
-        return const Color(0xFF3B82F6);
+      case 'partial':
+        return {
+          'textColor': const Color(0xFFD97706),
+          'bgColor': const Color(0xFFFFFBEB),
+          'borderColor': const Color(0xFFFDE68A),
+        };
       case 'pending':
-        return const Color(0xFFF59E0B);
+        return {
+          'textColor': const Color(0xFFD97706),
+          'bgColor': const Color(0xFFFFFBEB),
+          'borderColor': const Color(0xFFFDE68A),
+        };
       default:
-        return const Color(0xFF64748B);
-    }
-  }
-
-  Color _getStatusBgColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return const Color(0xFFECFDF5);
-      case 'partially paid':
-        return const Color(0xFFEFF6FF);
-      case 'pending':
-        return const Color(0xFFFFF7ED);
-      default:
-        return const Color(0xFFF1F5F9);
+        return {
+          'textColor': AppColors.textSecondary,
+          'bgColor': AppColors.background,
+          'borderColor': AppColors.cardBorder,
+        };
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryDark = Color(0xFF1B2559);
-    final Color statusColor = _getStatusColor(sale.paymentStatus);
-    final Color statusBgColor = _getStatusBgColor(sale.paymentStatus);
+    final String status = sale.paymentStatus.isNotEmpty ? sale.paymentStatus : "Pending";
+    final statusStyle = _getStatusStyle(status);
+    final dateStr =
+        "${sale.saleDate.day.toString().padLeft(2, '0')}/${sale.saleDate.month.toString().padLeft(2, '0')}/${sale.saleDate.year}";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: primaryDark,
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Sale Details",
-          style: TextStyle(
-            color: primaryDark,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: AppColors.background,
+      appBar: const CustomAppBar(title: "Sale Details"),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- MAIN DETAILS CARD ---
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.cardBorder),
               ),
               child: Column(
                 children: [
@@ -92,145 +72,126 @@ class SaleDetailsScreen extends StatelessWidget {
                     "Invoice Number",
                     sale.saleNumber,
                     valueStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: Color(0xFF2563EB),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
                       fontFamily: 'monospace',
                     ),
                   ),
-                  const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                  const Divider(height: 20, color: AppColors.cardBorder),
                   _buildInfoRow(
                     "Customer",
                     sale.customerName,
                   ),
                   if (sale.phone.isNotEmpty) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                    const Divider(height: 20, color: AppColors.cardBorder),
                     _buildInfoRow(
                       "Phone",
                       sale.phone,
                     ),
                   ],
                   if (sale.email.isNotEmpty) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                    const Divider(height: 20, color: AppColors.cardBorder),
                     _buildInfoRow(
                       "Email",
                       sale.email,
                     ),
                   ],
-                  const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                  const Divider(height: 20, color: AppColors.cardBorder),
                   _buildInfoRow(
                     "Total Products",
                     "${sale.items.length} Item(s)",
                   ),
-                  const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                  // Payment Status with Badge
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Payment Status",
+                  const Divider(height: 20, color: AppColors.cardBorder),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Payment Status",
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusStyle['bgColor'] as Color,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: statusStyle['borderColor'] as Color,
+                          ),
+                        ),
+                        child: Text(
+                          status,
                           style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            color: statusStyle['textColor'] as Color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusBgColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: statusColor.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Text(
-                            sale.paymentStatus,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   if (sale.balanceDue > 0) ...[
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                    const Divider(height: 20, color: AppColors.cardBorder),
                     _buildInfoRow(
                       "Balance Due",
                       "₹${sale.balanceDue.toStringAsFixed(2)}",
                       valueStyle: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFFEA580C),
+                        fontSize: 13.5,
+                        color: Color(0xFFD97706),
                       ),
                     ),
                   ],
-                  const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                  const Divider(height: 20, color: AppColors.cardBorder),
                   _buildInfoRow(
                     "Date",
-                    "${sale.saleDate.day}/${sale.saleDate.month}/${sale.saleDate.year}",
+                    dateStr,
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // --- TOTAL AMOUNT DISPLAY CARD ---
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.cardBorder),
               ),
               child: Column(
                 children: [
                   const Text(
-                    "Total Amount",
+                    "Total Sale Value",
                     style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMuted,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     "₹${sale.totalAmount.toStringAsFixed(2)}",
                     style: const TextStyle(
-                      fontSize: 30,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F9D94),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // --- ACTION BUTTONS (Edit Sale Removed) ---
+            const SizedBox(height: 20),
             Column(
               children: [
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 46,
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       try {
@@ -240,7 +201,7 @@ class SaleDetailsScreen extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(e.toString()),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AppColors.error,
                             ),
                           );
                         }
@@ -248,29 +209,29 @@ class SaleDetailsScreen extends StatelessWidget {
                     },
                     icon: const Icon(
                       Icons.picture_as_pdf_outlined,
-                      size: 20,
+                      size: 18,
                     ),
                     label: const Text(
                       "View Invoice",
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF143D7A),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 46,
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       try {
@@ -281,7 +242,7 @@ class SaleDetailsScreen extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(e.toString()),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AppColors.error,
                             ),
                           );
                         }
@@ -289,20 +250,20 @@ class SaleDetailsScreen extends StatelessWidget {
                     },
                     icon: const Icon(
                       Icons.share_outlined,
-                      size: 20,
+                      size: 18,
                     ),
                     label: const Text(
                       "Share Invoice",
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF143D7A),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.cardBorder),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
@@ -326,18 +287,17 @@ class SaleDetailsScreen extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+            fontSize: 12.5,
           ),
         ),
         Text(
           value,
           style: valueStyle ??
               const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Color(0xFF1B2559),
+                fontWeight: FontWeight.w600,
+                fontSize: 13.5,
+                color: AppColors.textPrimary,
               ),
         ),
       ],

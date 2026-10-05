@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import '../models/product_model.dart';
 import '../config/api_config.dart';
+import '../utils/api_constants.dart';
+import 'notification_service.dart';
 
 class ProductService {
-  final Dio dio = Dio();
+  final Dio dio = ApiConfig.dio;
+  Dio get _dio => dio;
 
   // GET PRODUCTS
   Future<List<Product>> getProducts() async {
@@ -97,6 +100,17 @@ class ProductService {
 
       print("STATUS : ${response.statusCode}");
       print("BODY : ${response.data}");
+
+      NotificationService().showAuditNotification(
+        title: "Product Created",
+        body: "$name ($sku) registered with stock of $stock $unit.",
+      );
+      if (stock < lowStockThreshold) {
+        NotificationService().showLowStockAlert(
+          productName: name,
+          remainingStock: stock,
+        );
+      }
     } on DioException catch (e) {
       print("STATUS : ${e.response?.statusCode}");
       print("ERROR : ${e.response?.data}");
@@ -173,6 +187,17 @@ class ProductService {
 
       print("UPDATE STATUS : ${response.statusCode}");
       print("UPDATE BODY : ${response.data}");
+
+      NotificationService().showAuditNotification(
+        title: "Product Updated",
+        body: "$name ($sku) details updated. Current stock: $stock $unit.",
+      );
+      if (stock <= lowStockThreshold) {
+        NotificationService().showLowStockAlert(
+          productName: name,
+          remainingStock: stock,
+        );
+      }
     } on DioException catch (e) {
       print("UPDATE ERROR : ${e.response?.data ?? e.message}");
       rethrow;
@@ -214,25 +239,94 @@ class ProductService {
     }
   }
   
-  // UPDATE PRODUCT STOCK (PATCH)
+  // UPDATE PRODUCT STOCK (PUT instead of PATCH)
   Future<void> updateProductStock(String id, int syncTotal) async {
     try {
-      await dio.patch(
+      final response = await dio.put(
         "${ApiConfig.baseUrl}/products/$id",
         data: {
           "stock": syncTotal,
         },
       );
+      print("STOCK UPDATE STATUS : ${response.statusCode}");
+      print("STOCK UPDATE BODY : ${response.data}");
+
+      NotificationService().showAuditNotification(
+        title: "Stock Level Adjusted",
+        body: "Inventory item stock synchronized to $syncTotal units.",
+      );
+      if (syncTotal < 10) {
+        NotificationService().showLowStockAlert(
+          productName: "Inventory Item",
+          remainingStock: syncTotal,
+        );
+      }
     } on DioException catch (e) {
-      print("STOCK UPDATE ERROR : ${e.response?.data}");
+      print("STOCK UPDATE ERROR : ${e.response?.data ?? e.message}");
       rethrow;
     }
   }
 
   // DELETE PRODUCT
-  Future<void> deleteProduct(String id) async {
-    await dio.delete(
-      "${ApiConfig.baseUrl}/products/$id",
-    );
+  Future<bool> deleteProduct(String id) async {
+    try {
+      final response = await _dio.delete('${ApiConstants.products}/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      rethrow;
+    }
   }
-}
+
+  // GET INVENTORY STATS
+  Future<Map<String, dynamic>> getInventoryStats() async {
+    try {
+      final response = await dio.get("${ApiConstants.products}/stats/summary");
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data['stats'] ?? response.data['data'] ?? response.data;
+        if (data is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(data);
+        }
+      }
+    } catch (_) {
+      // Fallback: calculate stats locally from getProducts()
+    }
+
+    try {
+      final products = await getProducts();
+      int totalProducts = products.length;
+      int totalStock = 0;
+      int lowStockCount = 0;
+      int outOfStockCount = 0;
+      double totalValue = 0.0;
+
+      for (final p in products) {
+        final stock = p.stock;
+        final price = p.sellingPrice > 0 ? p.sellingPrice : p.purchasePrice;
+        totalStock += stock;
+        totalValue += stock * price;
+
+        if (stock == 0) {
+          outOfStockCount++;
+        } else if (stock < 10) {
+          lowStockCount++;
+        }
+      }
+
+      return {
+        'totalProducts': totalProducts,
+        'totalStock': totalStock,
+        'lowStockCount': lowStockCount,
+        'outOfStockCount': outOfStockCount,
+        'totalValue': totalValue,
+      };
+    } catch (_) {
+      return {
+        'totalProducts': 0,
+        'totalStock': 0,
+        'lowStockCount': 0,
+        'outOfStockCount': 0,
+        'totalValue': 0.0,
+      };
+    }
+  }
+}

@@ -11,6 +11,7 @@ class Product {
   final int lowStockThreshold;
   double purchasePrice;
   double sellingPrice;
+  double get price => sellingPrice;
   final String hsnCode;
   final String barcode;
   final String description;

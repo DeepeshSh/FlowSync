@@ -7,6 +7,8 @@ const {
   register,
   login,
   getMe,
+  forgotPassword,
+  googleAuth,
 } = require(
   "../controllers/auth.controller"
 );
@@ -21,6 +23,16 @@ router.post(
 router.post(
   "/login",
   login,
+);
+
+router.post(
+  "/google",
+  googleAuth,
+);
+
+router.post(
+  "/forgot-password",
+  forgotPassword,
 );
 
 router.get(

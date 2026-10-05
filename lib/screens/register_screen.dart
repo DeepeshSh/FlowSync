@@ -1,91 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:inventory2/screens/login_screen.dart';
+import 'package:FlowSync/screens/login_screen.dart';
 import '../services/auth_service.dart';
-import 'inventory_screen.dart';
 import 'package:dio/dio.dart';
-import 'register_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State< RegisterScreen> createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool obscurePassword = true;
-final nameController = TextEditingController();
+  final nameController = TextEditingController();
 
-final businessNameController =
-    TextEditingController();
+  final businessNameController = TextEditingController();
 
-final emailController =
-    TextEditingController();
+  final emailController = TextEditingController();
 
-final passwordController =
-    TextEditingController();
+  final passwordController = TextEditingController();
 
-    final FocusNode passwordFocusNode =
-    FocusNode();
+  final FocusNode passwordFocusNode = FocusNode();
 
-bool showPasswordRules = false;
+  bool showPasswordRules = false;
 
-    bool hasUpperCase = false;
+  bool hasUpperCase = false;
 
-bool hasDigit = false;
+  bool hasDigit = false;
 
-bool hasSpecialChar = false;
+  bool hasSpecialChar = false;
 
-bool hasMinLength = false;
+  bool hasMinLength = false;
 
-
-void validatePassword(
-  String password,
-) {
-
-  setState(() {
-
-    hasUpperCase =
-        RegExp(r'[A-Z]')
-            .hasMatch(password);
-
-    hasDigit =
-        RegExp(r'[0-9]')
-            .hasMatch(password);
-
-    hasSpecialChar =
-        RegExp(
-          r'[!@#\$%^&*(),.?":{}|<>]',
-        ).hasMatch(password);
-
-    hasMinLength =
-        password.length >= 8;
-  });
-}
-
-@override
-void initState() {
-  super.initState();
-
-  passwordFocusNode.addListener(() {
-
+  void validatePassword(String password) {
     setState(() {
+      hasUpperCase = RegExp(r'[A-Z]').hasMatch(password);
 
-      showPasswordRules =
-          passwordFocusNode.hasFocus;
+      hasDigit = RegExp(r'[0-9]').hasMatch(password);
+
+      hasSpecialChar = RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password);
+
+      hasMinLength = password.length >= 8;
     });
-  });
-}
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    passwordFocusNode.addListener(() {
+      setState(() {
+        showPasswordRules = passwordFocusNode.hasFocus;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FC),
+      backgroundColor: const Color(0xFFF7F9FC),
 
       body: Stack(
         children: [
           // Background
-          Container(color: const Color(0xFFF5F7FC)),
+          Container(color: const Color(0xFFF7F9FC)),
 
           // Large Back Curve
           Positioned(
@@ -95,7 +73,7 @@ void initState() {
               width: 600,
               height: 400,
               decoration: const BoxDecoration(
-                color: Color(0xFFDCE8FF),
+                color: Color(0xFFE8EEF5),
                 shape: BoxShape.circle,
               ),
             ),
@@ -146,9 +124,9 @@ void initState() {
                                 end: Alignment.bottomCenter,
 
                                 colors: [
-                                  Color(0xFFD4E2FF),
-                                  Color(0xFFE7EEFF),
-                                  Color(0xFFF7FAFF),
+                                  Color(0xFFE8EEF5),
+                                  Color(0xFFE8EEF5),
+                                  Color(0xFFF7F9FC),
                                 ],
                               ),
                             ),
@@ -266,155 +244,128 @@ void initState() {
                   ),
 
                   const Text(
-  "Name",
-  style: TextStyle(
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
-  ),
-),
+                    "Name",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-TextField(
-  controller: nameController,
-  decoration: InputDecoration(
-    hintText: "Enter your name",
-    prefixIcon: const Icon(
-      Icons.person,
-      color: Color(0xFF2F80FF),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-    ),
-  ),
-),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: "Enter your name",
+                      prefixIcon: const Icon(
+                        Icons.person,
+                        color: Color(0xFF0F294A),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-const Text(
-  "Business Name",
-  style: TextStyle(
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
-  ),
-),
+                  const Text(
+                    "Business Name",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
 
-const SizedBox(height: 1 ),
+                  const SizedBox(height: 1),
 
-TextField(
-  controller: businessNameController,
-  decoration: InputDecoration(
-    hintText: "Enter business name",
-    prefixIcon: const Icon(
-      Icons.business,
-      color: Color(0xFF2F80FF),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-    ),
-  ),
-),
+                  TextField(
+                    controller: businessNameController,
+                    decoration: InputDecoration(
+                      hintText: "Enter business name",
+                      prefixIcon: const Icon(
+                        Icons.business,
+                        color: Color(0xFF0F294A),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-const Text(
-  "Email",
-  style: TextStyle(
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
-  ),
-),
+                  const Text(
+                    "Email",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-TextField(
-  controller: emailController,
-  keyboardType: TextInputType.emailAddress,
-  decoration: InputDecoration(
-    hintText: "Enter your email",
-    prefixIcon: const Icon(
-      Icons.email,
-      color: Color(0xFF2F80FF),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-    ),
-  ),
-),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: "Enter your email",
+                      prefixIcon: const Icon(
+                        Icons.email,
+                        color: Color(0xFF0F294A),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-const Text(
-  "Password",
-  style: TextStyle(
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
-  ),
-),
+                  const Text(
+                    "Password",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
 
-const SizedBox(height: 1),
+                  const SizedBox(height: 1),
 
-TextField(
-  focusNode: passwordFocusNode,
+                  TextField(
+                    focusNode: passwordFocusNode,
 
-  controller: passwordController,
-  obscureText: obscurePassword,
+                    controller: passwordController,
+                    obscureText: obscurePassword,
 
-  onChanged: (value) {
-    validatePassword(value);
-  },
-  decoration: InputDecoration(
-    hintText: "Enter your password",
-    prefixIcon: const Icon(
-      Icons.lock,
-      color: Color(0xFF2F80FF),
-    ),
-    suffixIcon: IconButton(
-      icon: Icon(
-        obscurePassword
-            ? Icons.visibility
-            : Icons.visibility_off,
-      ),
-      onPressed: () {
-        setState(() {
-          obscurePassword = !obscurePassword;
-        });
-      },
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-    ),
-  ),
-),
+                    onChanged: (value) {
+                      validatePassword(value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Enter your password",
+                      prefixIcon: const Icon(
+                        Icons.lock,
+                        color: Color(0xFF0F294A),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
 
+                  const SizedBox(height: 9),
 
-const SizedBox(height: 9),
+                  if (showPasswordRules) ...[
+                    const SizedBox(height: 0),
 
-if (showPasswordRules) ...[
+                    buildRule("Minimum 8 characters", hasMinLength),
 
-  const SizedBox(height: 0),
+                    buildRule("1 uppercase letter", hasUpperCase),
 
-  buildRule(
-    "Minimum 8 characters",
-    hasMinLength,
-  ),
+                    buildRule("1 digit", hasDigit),
 
-  buildRule(
-    "1 uppercase letter",
-    hasUpperCase,
-  ),
-
-  buildRule(
-    "1 digit",
-    hasDigit,
-  ),
-
-  buildRule(
-    "1 special character",
-    hasSpecialChar,
-  ),
-],
-                  
+                    buildRule("1 special character", hasSpecialChar),
+                  ],
 
                   const SizedBox(height: 0),
 
@@ -424,89 +375,68 @@ if (showPasswordRules) ...[
 
                     child: ElevatedButton(
                       onPressed: () async {
+                        try {
+                          if (!hasMinLength ||
+                              !hasUpperCase ||
+                              !hasDigit ||
+                              !hasSpecialChar) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Password does not meet requirements",
+                                ),
+                              ),
+                            );
 
-  try {
+                            return;
+                          }
 
-    if (!hasMinLength ||
-    !hasUpperCase ||
-    !hasDigit ||
-    !hasSpecialChar) {
+                          await AuthService().register(
+                            name: nameController.text.trim(),
 
-  ScaffoldMessenger.of(context)
-      .showSnackBar(
+                            businessName: businessNameController.text.trim(),
 
-    const SnackBar(
-      content: Text(
-        "Password does not meet requirements",
-      ),
-    ),
-  );
+                            email: emailController.text.trim(),
 
-  return;
-}
+                            password: passwordController.text,
+                          );
 
-    await AuthService().register(
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Registration Successful! Please login.",
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
 
-      name:
-          nameController.text.trim(),
+                            await Future.delayed(const Duration(seconds: 1));
 
-      businessName:
-          businessNameController.text.trim(),
+                            if (context.mounted) {
+                              Navigator.pushReplacement(
+                                context,
 
-      email:
-          emailController.text.trim(),
-
-      password:
-          passwordController.text,
-    );
-
-    if (context.mounted) {
-
-  ScaffoldMessenger.of(context)
-      .showSnackBar(
-    const SnackBar(
-      content: Text(
-        "Registration Successful! Please login.",
-      ),
-      backgroundColor: Colors.green,
-    ),
-  );
-
-  await Future.delayed(
-    const Duration(seconds: 1),
-  );
-
-  if (context.mounted) {
-
-    Navigator.pushReplacement(
-      context,
-
-      MaterialPageRoute(
-        builder: (_) =>
-            const LoginScreen(),
-      ),
-    );
-  }
-}
-
-  } on DioException catch (e) {
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-
-      SnackBar(
-        content: Text(
-
-          e.response?.data["message"]
-              ?? "Registration Failed",
-        ),
-      ),
-    );
-  }
-},
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
+                              );
+                            }
+                          }
+                        } on DioException catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.response?.data["message"] ??
+                                    "Registration Failed",
+                              ),
+                            ),
+                          );
+                        }
+                      },
 
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2F80FF),
+                        backgroundColor: const Color(0xFF0F294A),
 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -514,7 +444,7 @@ if (showPasswordRules) ...[
                       ),
 
                       child: const Text(
-                   "Register",
+                        "Register",
                         style: TextStyle(
                           fontSize: 20,
                           color: Colors.white,
@@ -551,25 +481,25 @@ if (showPasswordRules) ...[
 
                     child: OutlinedButton.icon(
                       onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const LoginScreen(),
-    ),
-  );
-},
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
 
                       label: const Text(
                         "Login",
                         style: TextStyle(
-                          color: Color(0xFF2F80FF),
+                          color: Color(0xFF0F294A),
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
 
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF2F80FF)),
+                        side: const BorderSide(color: Color(0xFF0F294A)),
 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -581,8 +511,6 @@ if (showPasswordRules) ...[
               ),
             ),
           ),
-
-          
 
           Positioned(
             top: 230,
@@ -688,54 +616,40 @@ if (showPasswordRules) ...[
     );
   }
 
-  Widget buildRule(
-  String text,
-  bool passed,
-) {
+  Widget buildRule(String text, bool passed) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(
-      vertical: 2,
-    ),
+      child: Row(
+        children: [
+          Icon(
+            passed ? Icons.check_circle : Icons.cancel,
 
-    child: Row(
-      children: [
+            size: 18,
 
-        Icon(
-          passed
-              ? Icons.check_circle
-              : Icons.cancel,
+            color: passed ? Colors.green : Colors.red,
+          ),
 
-          size: 18,
+          const SizedBox(width: 8),
 
-          color: passed
-              ? Colors.green
-              : Colors.red,
-        ),
+          Text(text),
+        ],
+      ),
+    );
+  }
 
-        const SizedBox(width: 8),
+  @override
+  void dispose() {
+    nameController.dispose();
 
-        Text(text),
-      ],
-    ),
-  );
+    businessNameController.dispose();
+
+    emailController.dispose();
+
+    passwordController.dispose();
+
+    passwordFocusNode.dispose();
+
+    super.dispose();
+  }
 }
-
-@override
-void dispose() {
-
-  nameController.dispose();
-
-  businessNameController.dispose();
-
-  emailController.dispose();
-
-  passwordController.dispose();
-
-  passwordFocusNode.dispose();
-
-  super.dispose();
-}
-}
-
-

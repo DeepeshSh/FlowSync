@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import '../models/product_model.dart';
 import '../models/customer_model.dart';
-import '../models/purchase_item_model.dart'; // Reusing model for item list lines
-import '../services/product_service.dart';
+import '../models/product_model.dart';
+import '../models/purchase_item_model.dart';
 import '../services/customer_service.dart';
+import '../services/product_service.dart';
 import '../services/sale_service.dart';
+import '../utils/app_theme.dart';
+import '../widgets/custom_app_bar.dart';
 
 class AddSaleScreen extends StatefulWidget {
   const AddSaleScreen({super.key});
@@ -15,45 +16,39 @@ class AddSaleScreen extends StatefulWidget {
 }
 
 class _AddSaleScreenState extends State<AddSaleScreen> {
-  // STATE FLAGS
   bool isLoading = true;
   bool isSaving = false;
   String currentStatus = "Draft";
 
-  // DATA STORAGE
   List<Product> products = [];
   List<Customer> customers = [];
   List<PurchaseItem> items = [];
   List<Product> filteredProducts = [];
 
-  // SELECTED CUSTOMER
   Customer? selectedCustomer;
 
-  // CONTROLLERS & DATA VARIABLES
   final notesController = TextEditingController();
   final contactPersonController = TextEditingController();
   final phoneController = TextEditingController();
   final paymentTermsController = TextEditingController();
   final searchController = TextEditingController();
-  final TextEditingController advancePaymentController = TextEditingController();
-  final TextEditingController transportChargesController = TextEditingController();
+  final advancePaymentController = TextEditingController();
+  final transportChargesController = TextEditingController();
 
   double gstPercentage = 18.0;
   double advancePayment = 0.0;
   double transportCharges = 0.0;
-  int? expandedIndex; // Keeps track of which product card is tapped open
+  int? expandedIndex;
 
-  // DATES & IDENTIFIERS
   DateTime saleDate = DateTime.now();
   DateTime? deliveryDate;
   late String saleNumber;
 
-  // FINANCIAL GETTERS
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.amount);
   double get gstAmount => subtotal * (gstPercentage / 100);
   double get grandTotal => subtotal + gstAmount + transportCharges;
   double get balanceDue =>
-      grandTotal - advancePayment >= 0 ? grandTotal - advancePayment : 0;
+      grandTotal - advancePayment >= 0 ? grandTotal - advancePayment : 0.0;
 
   @override
   void initState() {
@@ -75,10 +70,6 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     super.dispose();
   }
 
-  // ==========================================
-  // LOGIC & CORE FUNCTIONS
-  // ==========================================
-
   void generateSaleNumber() {
     final now = DateTime.now();
     saleNumber =
@@ -95,7 +86,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
       _updateState(() => isLoading = false);
       _showSnackBar(
         "Failed to load inventory data: ${e.toString()}",
-        Colors.red,
+        AppColors.error,
       );
     }
   }
@@ -124,16 +115,12 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  // ==========================================
-  // ACTION & DIALOG UTILITIES
-  // ==========================================
-
   Future<void> addItem() async {
     final Product? selectedProduct = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       builder: (context) => _buildProductSelectionSheet(),
     );
@@ -175,7 +162,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     final customer = await showModalBottomSheet<Customer>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       builder: (_) => _buildCustomerSelectionSheet(),
     );
@@ -213,14 +200,14 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     _updateState(() {
       currentStatus = (currentStatus == "Draft") ? "Pending" : "Draft";
     });
-    _showSnackBar("Status switched to $currentStatus", Colors.blue);
+    _showSnackBar("Status switched to $currentStatus", AppColors.primary);
   }
 
   Future<void> _submitSalesOrder(String targetStatus) async {
     if (selectedCustomer == null) {
       _showSnackBar(
         "Please select a customer to proceed.",
-        Colors.orange,
+        const Color(0xFFD97706),
       );
       return;
     }
@@ -228,7 +215,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     if (items.isEmpty) {
       _showSnackBar(
         "Your shopping cart is empty. Add items first.",
-        Colors.orange,
+        const Color(0xFFD97706),
       );
       return;
     }
@@ -249,6 +236,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
         "state": selectedCustomer!.state,
         "pincode": selectedCustomer!.pincode,
         "saleDate": saleDate.toIso8601String(),
+        "deliveryDate": deliveryDate?.toIso8601String(),
         "items": items.map((item) {
           return {
             "productId": item.productId,
@@ -272,23 +260,20 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
             : advancePayment > 0
                 ? "Partially Paid"
                 : "Pending",
+        "status": targetStatus,
       };
 
       await SaleService().createSale(orderPayload);
-
       _showSnackBar(
         "Sales order successfully logged!",
-        Colors.green,
+        const Color(0xFF10B981),
       );
 
       if (mounted) {
         Navigator.pop(context, true);
       }
     } catch (e) {
-      _showSnackBar(
-        "Order Submission Failed: ${e.toString()}",
-        Colors.red,
-      );
+      _showSnackBar("Order Submission Failed: ${e.toString()}", AppColors.error);
     } finally {
       _updateState(() => isSaving = false);
     }
@@ -297,23 +282,94 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FC),
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      appBar: _buildAppBar(),
+      appBar: CustomAppBar(
+        title: "New Sale",
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: InkWell(
+                onTap: _toggleStatus,
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: currentStatus == "Draft"
+                        ? const Color(0xFFE8EEF5)
+                        : const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: currentStatus == "Draft"
+                          ? const Color(0xFFBFDBFE)
+                          : const Color(0xFFA7F3D0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        currentStatus == "Draft"
+                            ? Icons.edit_note_outlined
+                            : Icons.check_circle_outline,
+                        size: 15,
+                        color: currentStatus == "Draft"
+                            ? const Color(0xFF0F294A)
+                            : const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        currentStatus,
+                        style: TextStyle(
+                          color: currentStatus == "Draft"
+                              ? const Color(0xFF0F294A)
+                              : const Color(0xFF10B981),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNavigationBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                "ID: $saleNumber",
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
             _buildCustomerProfileCard(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildInventoryContainer(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildDeliveryNoteSection(),
           ],
         ),
@@ -321,104 +377,12 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(80),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Color(0xFF1B2559),
-                ),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "New Sale",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B2559),
-                      ),
-                    ),
-                    Text(
-                      "ID: $saleNumber",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              InkWell(
-                onTap: _toggleStatus,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFE1E8F5)),
-                    color: currentStatus == "Draft"
-                        ? const Color(0xFFEAF2FF)
-                        : const Color(0xFFE8F7F7),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        currentStatus == "Draft"
-                            ? Icons.edit_note_outlined
-                            : Icons.check_circle_outline,
-                        size: 18,
-                        color: currentStatus == "Draft"
-                            ? const Color(0xFF2F80FF)
-                            : const Color(0xFF0F9D94),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        currentStatus,
-                        style: TextStyle(
-                          color: currentStatus == "Draft"
-                              ? const Color(0xFF2F80FF)
-                              : const Color(0xFF0F9D94),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBottomNavigationBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 25),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
-        ),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12)],
+        border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
       child: SafeArea(
         top: false,
@@ -427,16 +391,14 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
           children: [
             _buildSummaryRow("Subtotal (Excl. GST)", subtotal),
             _buildSummaryRow("GST ($gstPercentage%)", gstAmount),
-            
-            // Transportation Charges Editable Input
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     "Transportation Charges",
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   SizedBox(
                     width: 110,
@@ -448,34 +410,30 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       ),
                       textAlign: TextAlign.end,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B2559),
+                        color: AppColors.textPrimary,
                       ),
-                      decoration: InputDecoration(
-                        prefixText: '₹',
-                        prefixStyle: const TextStyle(
-                          fontSize: 14,
+                      decoration: const InputDecoration(
+                        prefixText: '₹ ',
+                        prefixStyle: TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1B2559),
+                          color: AppColors.textPrimary,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 0,
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
+                        fillColor: AppColors.background,
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
-                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                          borderSide: BorderSide(color: AppColors.cardBorder),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF2F80FF),
-                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                          borderSide: BorderSide(color: AppColors.primary),
                         ),
                       ),
                       onChanged: (val) {
@@ -488,16 +446,14 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 ],
               ),
             ),
-
-            // Advance Payment Editable Input
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     "Advance Payment",
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   SizedBox(
                     width: 110,
@@ -509,34 +465,30 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       ),
                       textAlign: TextAlign.end,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B2559),
+                        color: AppColors.textPrimary,
                       ),
-                      decoration: InputDecoration(
-                        prefixText: '₹',
-                        prefixStyle: const TextStyle(
-                          fontSize: 14,
+                      decoration: const InputDecoration(
+                        prefixText: '₹ ',
+                        prefixStyle: TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1B2559),
+                          color: AppColors.textPrimary,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 0,
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
+                        fillColor: AppColors.background,
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
-                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                          borderSide: BorderSide(color: AppColors.cardBorder),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF2F80FF),
-                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(6)),
+                          borderSide: BorderSide(color: AppColors.primary),
                         ),
                       ),
                       onChanged: (val) {
@@ -549,10 +501,9 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 ],
               ),
             ),
-            
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Divider(height: 1, thickness: 1),
+              child: Divider(height: 1, color: AppColors.cardBorder),
             ),
             Row(
               children: [
@@ -565,17 +516,16 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       const Text(
                         "Total Bill Amount",
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Colors.grey,
+                          fontSize: 11,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         "₹${grandTotal.toStringAsFixed(2)}",
                         style: const TextStyle(
-                          color: Color(0xFF1B2559),
-                          fontSize: 18,
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -584,7 +534,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         Text(
                           "Due: ₹${balanceDue.toStringAsFixed(2)}",
                           style: const TextStyle(
-                            color: Colors.orange,
+                            color: Color(0xFFD97706),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -603,9 +553,9 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           ? null
                           : () => _submitSalesOrder(currentStatus),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF143D7A),
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         elevation: 0,
                       ),
@@ -626,7 +576,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 SizedBox(width: 6),
@@ -650,20 +600,20 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   Widget _buildSummaryRow(String title, double value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           Text(
             "₹${value.toStringAsFixed(2)}",
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1B2559),
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -673,17 +623,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   Widget _buildCustomerProfileCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         children: [
@@ -691,19 +635,19 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 55,
-                height: 55,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F7F5),
-                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFFE8EEF5),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.person_outline,
-                  size: 26,
-                  color: Color(0xFF0F766E),
+                  size: 20,
+                  color: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,34 +655,36 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                     Text(
                       selectedCustomer?.customerName ?? "Select Customer",
                       style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B2559),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       selectedCustomer?.phone ?? "No customer linked",
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 13,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
+                        horizontal: 6,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF4E5),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
                       ),
                       child: Text(
-                        "Opening Balance: ₹${selectedCustomer?.openingBalance.toStringAsFixed(0) ?? "0"}",
+                        "Prev Balance: ₹${selectedCustomer?.openingBalance.toStringAsFixed(0) ?? "0"}",
                         style: const TextStyle(
-                          color: Colors.orange,
+                          color: Color(0xFFD97706),
                           fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                          fontSize: 10,
                         ),
                       ),
                     ),
@@ -748,18 +694,23 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
               OutlinedButton(
                 onPressed: _selectCustomer,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  side: const BorderSide(color: AppColors.cardBorder),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                  minimumSize: const Size(0, 32),
                 ),
-                child: const Text("Change", style: TextStyle(fontSize: 13)),
+                child: const Text(
+                  "Change",
+                  style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                ),
               ),
             ],
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1),
+            child: Divider(height: 1, color: AppColors.cardBorder),
           ),
           Row(
             children: [
@@ -770,7 +721,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                   _selectSaleDate,
                 ),
               ),
-              Container(width: 1, height: 35, color: Colors.grey.shade200),
+              Container(width: 1, height: 32, color: AppColors.cardBorder),
               Expanded(
                 child: _buildDateTile(
                   "Delivery Date",
@@ -778,25 +729,26 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                   _selectDeliveryDate,
                 ),
               ),
-              Container(width: 1, height: 35, color: Colors.grey.shade200),
+              Container(width: 1, height: 32, color: AppColors.cardBorder),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: const EdgeInsets.only(left: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "Terms",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         paymentTermsController.text.isEmpty
                             ? "Cash"
                             : paymentTermsController.text,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1B2559),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -812,17 +764,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   Widget _buildInventoryContainer() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -830,37 +776,39 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
           const Text(
             "Items & Measurements",
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2559),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: searchController,
-                  decoration: InputDecoration(
+                  style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                  decoration: const InputDecoration(
                     hintText: "Search stock list...",
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textMuted),
                     filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    fillColor: AppColors.background,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      borderSide: BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               SizedBox(
-                height: 45,
+                height: 40,
                 child: ElevatedButton.icon(
                   onPressed: addItem,
                   icon: const Icon(Icons.add, color: Colors.white, size: 16),
@@ -869,12 +817,13 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2F80FF),
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 0,
                   ),
@@ -882,7 +831,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           items.isEmpty ? _buildEmptyStateWidget() : _buildInventoryItemsList(),
         ],
       ),
@@ -891,21 +840,21 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   Widget _buildEmptyStateWidget() {
     return Container(
-      height: 120,
+      height: 100,
       width: double.infinity,
       alignment: Alignment.center,
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.assignment_outlined,
-            size: 36,
-            color: Colors.grey.shade300,
+            size: 32,
+            color: AppColors.textMuted,
           ),
-          const SizedBox(height: 6),
-          const Text(
+          SizedBox(height: 6),
+          Text(
             "No inventory lines drafted yet",
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -913,33 +862,25 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   }
 
   Widget _buildInventoryItemsList() {
-    return ListView(
+    return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(items.length, (index) {
+      itemCount: items.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
         final item = items[index];
         final isExpanded = expandedIndex == index;
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(bottom: 14),
-          padding: const EdgeInsets.all(16),
+        return Container(
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isExpanded
-                  ? const Color(0xFF2F80FF).withOpacity(0.3)
-                  : const Color(0xFFE2E8F0),
-              width: isExpanded ? 1.5 : 1,
+                  ? AppColors.primary.withOpacity(0.4)
+                  : AppColors.cardBorder,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isExpanded ? 0.06 : 0.02),
-                blurRadius: isExpanded ? 12 : 6,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,46 +903,46 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           Text(
                             item.productName,
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1B2559),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "Code: ${item.sku} | Rate: ₹${item.rate.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Code: ${item.sku} | Rate: ₹${item.rate.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
                             "Total: ₹${item.amount.toStringAsFixed(2)}",
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2F80FF),
+                              color: AppColors.primary,
                             ),
                           ),
                           if (item.notes != null && item.notes!.isNotEmpty) ...[
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                                horizontal: 6,
+                                vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF9E6),
-                                borderRadius: BorderRadius.circular(6),
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(
                                     Icons.sticky_note_2,
-                                    size: 12,
-                                    color: Colors.orange,
+                                    size: 11,
+                                    color: Color(0xFFD97706),
                                   ),
                                   const SizedBox(width: 4),
                                   Flexible(
@@ -1010,8 +951,8 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.orange,
+                                        fontSize: 10.5,
+                                        color: Color(0xFFD97706),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -1023,7 +964,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -1033,9 +974,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                             IconButton(
                               icon: const Icon(
                                 Icons.remove_circle_outline,
-                                size: 22,
-                                color: Color(0xFF1B2559),
+                                size: 20,
+                                color: AppColors.textPrimary,
                               ),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              padding: EdgeInsets.zero,
                               onPressed: () {
                                 if (item.quantity > 1) {
                                   setState(() {
@@ -1046,8 +989,8 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                               },
                             ),
                             SizedBox(
-                              width: 60,
-                              height: 36,
+                              width: 52,
+                              height: 32,
                               child: TextFormField(
                                 key: ValueKey(
                                   "${item.productId}_${item.quantity}",
@@ -1056,28 +999,24 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1B2559),
+                                  color: AppColors.textPrimary,
                                 ),
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
+                                decoration: const InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
                                     vertical: 2,
                                     horizontal: 4,
                                   ),
                                   filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
+                                  fillColor: AppColors.background,
                                   enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFFE2E8F0),
-                                    ),
+                                    borderRadius: BorderRadius.all(Radius.circular(6)),
+                                    borderSide: BorderSide(color: AppColors.cardBorder),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF2F80FF),
-                                    ),
+                                    borderRadius: BorderRadius.all(Radius.circular(6)),
+                                    borderSide: BorderSide(color: AppColors.primary),
                                   ),
                                 ),
                                 onChanged: (val) {
@@ -1092,9 +1031,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                             IconButton(
                               icon: const Icon(
                                 Icons.add_circle_outline,
-                                size: 22,
-                                color: Color(0xFF1B2559),
+                                size: 20,
+                                color: AppColors.textPrimary,
                               ),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              padding: EdgeInsets.zero,
                               onPressed: () {
                                 setState(() {
                                   item.quantity++;
@@ -1107,10 +1048,10 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         const SizedBox(height: 2),
                         Text(
                           item.unit.isEmpty ? 'PCS' : item.unit.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: const TextStyle(
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade500,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ],
@@ -1120,66 +1061,64 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
               ),
               if (isExpanded) ...[
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Color(0xFFEDF2F7),
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1, color: AppColors.cardBorder),
                 ),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _showAddNoteDialog(index, item.notes ?? ""),
-                        icon: const Icon(Icons.edit_note, size: 18),
+                        icon: const Icon(Icons.edit_note, size: 16),
                         label: Text(
                           item.notes == null || item.notes!.isEmpty
                               ? "Add Note"
                               : "Edit Note",
+                          style: const TextStyle(fontSize: 12),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2F80FF),
-                          side: const BorderSide(color: Color(0xFF2F80FF)),
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                   Expanded(
-  child: OutlinedButton.icon(
-    onPressed: () => _showCustomPriceDialog(
-      index, 
-      item.rate, 
-      item.productId,
-    ),
-    icon: const Icon(Icons.edit_road_outlined, size: 18),
-    label: const Text("Edit Price"),
-    style: OutlinedButton.styleFrom(
-      foregroundColor: const Color(0xFF0F9D94),
-      side: const BorderSide(color: Color(0xFF0F9D94)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-    ),
-  ),
-),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showCustomPriceDialog(
+                          index,
+                          item.rate,
+                          item.productId,
+                        ),
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        label: const Text("Edit Price", style: TextStyle(fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                          side: const BorderSide(color: AppColors.cardBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () {
                         removeItem(index);
                       },
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
+                        backgroundColor: const Color(0xFFFEF2F2),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(6),
+                          side: const BorderSide(color: Color(0xFFFECACA)),
                         ),
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                       ),
                     ),
                   ],
@@ -1188,7 +1127,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
             ],
           ),
         );
-      }),
+      },
     );
   }
 
@@ -1199,36 +1138,39 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
           ),
           title: const Text(
             "Product Note",
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2559),
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: AppColors.textPrimary,
             ),
           ),
           content: TextField(
             controller: textController,
             maxLines: 3,
-            decoration: InputDecoration(
+            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            decoration: const InputDecoration(
               hintText: "Enter shipping instructions or delivery batch details...",
+              hintStyle: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
+              fillColor: AppColors.background,
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+                borderSide: BorderSide(color: AppColors.cardBorder),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -1238,9 +1180,9 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2F80FF),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
               child: const Text(
@@ -1254,7 +1196,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-void _showCustomPriceDialog(int index, double currentRate, String productId) {
+  void _showCustomPriceDialog(int index, double currentRate, String productId) {
     final priceController = TextEditingController(
       text: currentRate.toStringAsFixed(2),
     );
@@ -1267,13 +1209,14 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
           builder: (context, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
               ),
               title: const Text(
                 "Modify Selling Price",
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2559),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
                 ),
               ),
               content: Column(
@@ -1285,37 +1228,39 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: InputDecoration(
+                    style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                    decoration: const InputDecoration(
                       hintText: "Enter manual rate per piece...",
+                      hintStyle: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
                       prefixText: "₹ ",
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: AppColors.background,
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.all(Radius.circular(6)),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+                        borderRadius: BorderRadius.all(Radius.circular(6)),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    activeColor: const Color(0xFF0F9D94),
+                    activeColor: AppColors.primary,
                     title: const Text(
                       "Update master product selling price",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B2559),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     subtitle: const Text(
                       "Saves this price to master inventory for future sales",
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                     ),
                     value: updateMasterCatalog,
                     onChanged: (val) {
@@ -1331,7 +1276,7 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
                   onPressed: () => Navigator.pop(context),
                   child: const Text(
                     "Cancel",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
                 ElevatedButton(
@@ -1351,10 +1296,7 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
                             (p) => p.id == productId,
                           );
                           if (prodIndex >= 0) {
-                            // 1. Mutate local list item
                             products[prodIndex].sellingPrice = newRate;
-
-                            // 2. Call focused PUT request for selling price
                             await ProductService().updateSellingPrice(
                               productId,
                               newRate,
@@ -1363,12 +1305,12 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
 
                           _showSnackBar(
                             "Master product selling price updated!",
-                            Colors.green,
+                            const Color(0xFF10B981),
                           );
                         } catch (e) {
                           _showSnackBar(
                             "Failed to update master catalog: $e",
-                            Colors.orange,
+                            const Color(0xFFD97706),
                           );
                         }
                       }
@@ -1383,9 +1325,9 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F9D94),
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                   child: const Text(
@@ -1405,22 +1347,23 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               date == null
                   ? "Select Date"
                   : "${date.day}/${date.month}/${date.year}",
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2559),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: AppColors.textPrimary,
               ),
             ),
           ],
@@ -1431,17 +1374,11 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
 
   Widget _buildDeliveryNoteSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1450,42 +1387,42 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
             children: [
               Icon(
                 Icons.local_shipping_outlined,
-                color: Color(0xFF1B2559),
-                size: 20,
+                color: AppColors.primary,
+                size: 18,
               ),
               SizedBox(width: 8),
               Text(
                 "Delivery Instructions / Notes",
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2559),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextField(
             controller: notesController,
             maxLines: 3,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF1B2559)),
-            decoration: InputDecoration(
+            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            decoration: const InputDecoration(
               hintText:
                   "Enter specific instructions for customer delivery, billing addresses, drop-off, etc...",
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+              fillColor: AppColors.background,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+                borderSide: BorderSide(color: AppColors.cardBorder),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF2F80FF)),
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),
@@ -1503,12 +1440,12 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
       builder: (context, scrollController) {
         return Column(
           children: [
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
-              width: 40,
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: AppColors.cardBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1517,32 +1454,35 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
               child: Text(
                 "Select Product Inventory",
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2559),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
             Expanded(
-              child: ListView.builder(
+              child: ListView.separated(
                 controller: scrollController,
                 itemCount: filteredProducts.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.cardBorder),
                 itemBuilder: (context, index) {
                   final product = filteredProducts[index];
 
                   return ListTile(
                     title: Text(
                       product.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     ),
                     subtitle: Text(
                       "SKU: ${product.sku} | Unit: ${product.unit.isEmpty ? 'Pcs' : product.unit}",
+                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                     ),
                     trailing: Text(
                       "₹${product.sellingPrice}",
                       style: const TextStyle(
-                        color: Color(0xFF0F9D94),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
                     onTap: () => Navigator.pop(context, product),
@@ -1557,17 +1497,21 @@ void _showCustomPriceDialog(int index, double currentRate, String productId) {
   }
 
   Widget _buildCustomerSelectionSheet() {
-    return ListView.builder(
+    return ListView.separated(
       itemCount: customers.length,
+      separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.cardBorder),
       itemBuilder: (context, index) {
         final c = customers[index];
         return ListTile(
           title: Text(
             c.customerName,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.textPrimary),
           ),
-          subtitle: Text(c.phone),
-          trailing: const Icon(Icons.keyboard_arrow_right, size: 16),
+          subtitle: Text(
+            c.phone,
+            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
+          trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
           onTap: () => Navigator.pop(context, c),
         );
       },

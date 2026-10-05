@@ -3,7 +3,7 @@ import '../models/category_model.dart';
 import '../config/api_config.dart';
 
 class CategoryService {
-  final Dio dio = Dio();
+  final Dio dio = ApiConfig.dio;
   final String baseUrl = "${ApiConfig.baseUrl}/categories";
 
   Future<List<Category>> getCategories() async {

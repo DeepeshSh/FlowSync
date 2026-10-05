@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "358817288313",
+    "project_id": "flowsync-d7eef",
+    "storage_bucket": "flowsync-d7eef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:358817288313:android:e8585997c7e4f64665c4a8",
+        "android_client_info": {
+          "package_name": "com.example.inventory2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "358817288313-mp996qumvg4eciust2i002dhq3uba4ut.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvDOT5DWghR3aLORjmwjrGJDWJ5IzAYO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "358817288313-mp996qumvg4eciust2i002dhq3uba4ut.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

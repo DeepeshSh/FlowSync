@@ -4,13 +4,7 @@ import '../config/api_config.dart';
 import '../models/sale_model.dart';
 
 class SaleService {
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ),
-  );
+  final Dio dio = ApiConfig.dio;
 
   /// Fetch all sales
   Future<List<Sale>> getSales() async {

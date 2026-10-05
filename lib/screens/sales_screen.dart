@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sale_model.dart';
 import '../services/sale_service.dart';
+import '../utils/app_theme.dart';
 import 'add_sale_screen.dart';
 import 'sale_details_screen.dart';
 
@@ -143,15 +144,14 @@ class _SalesScreenState extends State<SalesScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.maybePop(context),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF0F172A),
-                          size: 18,
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, size: 22, color: AppColors.primary),
+                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
-                      ),
-                      const SizedBox(width: 16),
+                        const SizedBox(width: 8),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +227,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     height: 52,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x05000000),
@@ -392,7 +392,7 @@ class _SalesScreenState extends State<SalesScreen> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: const Color(0xFFF1F5F9)),
                                 boxShadow: const [
                                   BoxShadow(
@@ -435,7 +435,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFEFF6FF),
+                                                color: const Color(0xFFE8EEF5),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
@@ -501,7 +501,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF8FAFC),
+                                          color: const Color(0xFFF7F9FC),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Row(
@@ -536,8 +536,8 @@ class _SalesScreenState extends State<SalesScreen> {
           );
           await refreshSales();
         },
-        backgroundColor: const Color(0xFF2563EB),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        backgroundColor: const Color(0xFF0F294A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         icon: const Icon(Icons.add, color: Colors.white, size: 20),
         label: const Text(
           "New Sale",
@@ -553,7 +553,7 @@ class _SalesScreenState extends State<SalesScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0x99E2E8F0)),
         ),
         child: Row(
@@ -597,7 +597,7 @@ class _SalesScreenState extends State<SalesScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0x99E2E8F0)),
       ),
       child: Row(

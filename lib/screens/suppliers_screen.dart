@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/supplier_model.dart';
 import '../services/supplier_service.dart';
+import '../utils/app_theme.dart';
+import '../widgets/custom_app_bar.dart';
 import 'add_supplier_screen.dart';
-import 'edit_supplier_screen.dart'; // Imported to navigate to Edit Supplier screen
+import 'edit_supplier_screen.dart';
 
 class SuppliersScreen extends StatefulWidget {
   const SuppliersScreen({super.key});
@@ -20,7 +22,6 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   final TextEditingController searchController = TextEditingController();
   double totalOutstanding = 0;
   int activeSuppliers = 0;
-  String selectedFilter = "All";
 
   @override
   void initState() {
@@ -28,9 +29,16 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     loadSuppliers();
   }
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> loadSuppliers() async {
     try {
       final data = await SupplierService().getSuppliers();
+      if (!mounted) return;
       setState(() {
         suppliers = data;
         filteredSuppliers = data;
@@ -38,7 +46,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
         activeSuppliers = data.where((s) => s.isActive).length;
         isLoading = false;
       });
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -56,72 +65,58 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   Widget buildHeaderCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF), // Light clean themed background
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDBEAFE)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF3B82F6).withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
-          // Total Active Suppliers Counter
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 2),
                 const Text(
                   "Active Suppliers",
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Text(
                   activeSuppliers.toString(),
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Divider Line Frame Separator
           Container(
             width: 1,
-            height: 65,
-            color: const Color(0xFFDBEAFE),
+            height: 40,
+            color: AppColors.cardBorder,
           ),
-          
-          // Total Balance Counter (No symbol)
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 2),
                 const Text(
                   "Outstanding Due",
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Text(
-                  totalOutstanding.toStringAsFixed(2),
+                  "₹${totalOutstanding.toStringAsFixed(2)}",
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -134,45 +129,32 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   }
 
   Widget buildSupplierCard(Supplier supplier) {
-    const Color textPrimary = Color(0xFF0F172A);
-    const Color textMuted = Color(0xFF64748B);
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Branding/Icon representation Box
           Container(
-            width: 52,
-            height: 52,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFDBEAFE)),
+              color: const Color(0xFFE8EEF5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
             child: const Icon(
-              Icons.business_rounded,
-              color: Color(0xFF3B82F6),
-              size: 24,
+              Icons.business_outlined,
+              color: AppColors.primary,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 16),
-
-          // Central Profile Details Frame
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,9 +163,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                 Text(
                   supplier.name,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -191,36 +173,25 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   supplier.companyName.isEmpty ? "Individual Contractor" : supplier.companyName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, color: textMuted),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Bal: ${supplier.openingBalance.toStringAsFixed(2)}", // Fixed: Proper String interpolation without symbols
+                  "Balance: ₹${supplier.openingBalance.toStringAsFixed(2)}",
                   style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12.5,
                   ),
                 ),
               ],
             ),
           ),
-
-          // 3 Dots Context Actions Link Button Row Element
-          GestureDetector(
-            onTap: () => showActionSelectionMenu(supplier),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.more_horiz_rounded,
-                color: Color(0xFF94A3B8),
-                size: 20,
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.more_horiz_rounded, color: AppColors.textMuted, size: 20),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () => showActionSelectionMenu(supplier),
           ),
         ],
       ),
@@ -232,31 +203,30 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   supplier.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   supplier.companyName.isNotEmpty ? supplier.companyName : "Manage options for this supplier",
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blue.withOpacity(0.1),
-                    child: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                  ),
-                  title: const Text("Edit Supplier Profile", style: TextStyle(fontWeight: FontWeight.w600)),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                  title: const Text("Edit Supplier Profile", style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -265,13 +235,11 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                     ).then((_) => loadSuppliers());
                   },
                 ),
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const Divider(height: 1, color: AppColors.cardBorder),
                 ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.red.withOpacity(0.1),
-                    child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                  ),
-                  title: const Text("Remove Supplier", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+                  title: const Text("Remove Supplier", style: TextStyle(color: AppColors.error, fontSize: 13.5, fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.pop(context);
                     showDeleteConfirmation(supplier);
@@ -290,52 +258,53 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 40,
+                  width: 36,
                   height: 4,
-                  decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: AppColors.cardBorder, borderRadius: BorderRadius.circular(2)),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 const Text(
                   "Confirm Deletion",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
-                  "Are you sure you want to completely delete \"${supplier.name}\" from your supplier index records?",
+                  "Are you sure you want to completely delete \"${supplier.name}\" from your supplier records?",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          side: const BorderSide(color: AppColors.cardBorder),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         onPressed: () => Navigator.pop(context),
-                        child: const Text("Cancel", style: TextStyle(color: Color(0xFF64748B))),
+                        child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: AppColors.error,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         onPressed: () async {
                           Navigator.pop(context);
@@ -347,7 +316,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -358,152 +327,83 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color textPrimary = Color(0xFF0F172A);
-    const Color textMuted = Color(0xFF64748B);
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Premium Theme Linear Gradient Canvas Frame
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFE2EAF2),
-                    Color(0xFFF1F5F9),
-                    Colors.white,
-                  ],
-                  stops: [0.0, 0.35, 0.7],
-                ),
-              ),
-            ),
+      backgroundColor: AppColors.background,
+      appBar: CustomAppBar(
+        title: "Suppliers",
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
+            tooltip: "Refresh",
+            onPressed: loadSuppliers,
           ),
-
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Safe Custom Header row implementation
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              GestureDetector(
-                                onTap: () => Navigator.maybePop(context),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4.0),
-                                  child: Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: textPrimary,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      "Suppliers",
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w800,
-                                        color: textPrimary,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      "Manage third-party supply channels & ledgers",
-                                      style: TextStyle(color: textMuted, fontSize: 12.5),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: buildHeaderCard(),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Search Field input configuration frame
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: searchSuppliers,
-                            decoration: InputDecoration(
-                              hintText: "Search your vendor listings...",
-                              hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        filteredSuppliers.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 60),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.storefront_outlined, size: 48, color: Color(0xFF94A3B8)),
-                                      SizedBox(height: 12),
-                                      Text(
-                                        "No Suppliers Found",
-                                        style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
-                                itemCount: filteredSuppliers.length,
-                                itemBuilder: (context, index) {
-                                  return buildSupplierCard(filteredSuppliers[index]);
-                                },
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
         ],
       ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildHeaderCard(),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: searchController,
+                    onChanged: searchSuppliers,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: "Search your vendor listings...",
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  filteredSuppliers.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 60),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.storefront_outlined, size: 40, color: AppColors.textMuted),
+                                SizedBox(height: 8),
+                                Text(
+                                  "No Suppliers Found",
+                                  style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredSuppliers.length,
+                          itemBuilder: (context, index) {
+                            return buildSupplierCard(filteredSuppliers[index]);
+                          },
+                        ),
+                ],
+              ),
+            ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF143D7A),
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         onPressed: () async {
           await Navigator.push(
             context,
@@ -511,10 +411,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           );
           loadSuppliers();
         },
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, color: Colors.white, size: 18),
         label: const Text(
           "Add Supplier",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
         ),
       ),
     );

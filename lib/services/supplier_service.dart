@@ -3,7 +3,7 @@ import '../config/api_config.dart';
 import '../models/supplier_model.dart';
 
 class SupplierService {
-  final Dio dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final Dio dio = ApiConfig.dio;
 
   Future<List<Supplier>> getSuppliers() async {
     final response = await dio.get("/suppliers");

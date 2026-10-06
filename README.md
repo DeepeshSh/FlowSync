@@ -234,11 +234,3 @@ flutter build apk --release
 build/app/outputs/flutter-apk/app-release.apk
 
 ```
-
----
-
-## 📄 License
-
-This software is released under the **MIT License**. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for terms and conditions.
-
----

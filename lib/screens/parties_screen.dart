@@ -944,22 +944,6 @@ class _PartiesScreenState extends State<PartiesScreen> with SingleTickerProvider
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
             ),
-            const SizedBox(height: 18),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text(
-                "Add New Party",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              onPressed: () => _showAddEditPartySheet(),
-            ),
           ],
         ),
       ),

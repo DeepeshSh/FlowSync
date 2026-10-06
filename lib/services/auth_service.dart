@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -8,13 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_user.dart';
 import '../utils/api_constants.dart';
 
-
-
 class AuthService {
   static const String _tokenKey = "auth_token";
   static const String _userKey = "auth_user";
 
-  // Helper for safe JSON decoding
   dynamic _safeJsonDecode(String source) {
     try {
       return jsonDecode(source);
@@ -23,7 +22,6 @@ class AuthService {
     }
   }
 
-  /// Maps Firebase Auth codes and backend error patterns to user-friendly messages
   static String formatAuthError(dynamic error) {
     if (error is FirebaseAuthException) {
       switch (error.code) {
@@ -38,8 +36,12 @@ class AuthService {
           return "Password should be at least 6 characters.";
         case 'invalid-email':
           return "Please enter a valid email address.";
+        case 'server-sleeping':
+          return error.message ?? "Server is waking up. Please try again in a few moments.";
+        case 'network-request-failed':
+          return error.message ?? "Connection error. Please check your internet or server status.";
         default:
-          return error.message ?? "Authentication failed. Please check your connection.";
+          return error.message ?? "Authentication failed.";
       }
     }
 
@@ -60,12 +62,8 @@ class AuthService {
       return "Please enter a valid email address.";
     }
 
-    return "Authentication failed. Please check your connection.";
+    return error.toString();
   }
-
-  // ===========================
-  // PASSWORD RESET
-  // ===========================
 
   Future<void> sendPasswordResetEmail(String email) async {
     try {
@@ -74,10 +72,6 @@ class AuthService {
       rethrow;
     }
   }
-
-  // ===========================
-  // IS LOGGED IN CHECK
-  // ===========================
 
   Future<bool> isUserLoggedIn() async {
     try {
@@ -88,10 +82,6 @@ class AuthService {
       return false;
     }
   }
-
-  // ===========================
-  // REGISTER
-  // ===========================
 
   Future<AppUser> register({
     required String name,
@@ -117,19 +107,29 @@ class AuthService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConstants.auth}/register"),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "name": name.trim(),
-          "businessName": businessName.trim(),
-          "email": cleanEmail,
-          "password": password,
-          if (phone != null && phone.trim().isNotEmpty) "phone": phone.trim(),
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse("${ApiConstants.auth}/register"),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: jsonEncode({
+              "name": name.trim(),
+              "businessName": businessName.trim(),
+              "email": cleanEmail,
+              "password": password,
+              if (phone != null && phone.trim().isNotEmpty) "phone": phone.trim(),
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw FirebaseAuthException(
+                code: 'server-sleeping',
+                message: "Render server is booting up. Please wait 30 seconds and retry.",
+              );
+            },
+          );
 
       final body = _safeJsonDecode(response.body);
 
@@ -151,21 +151,26 @@ class AuthService {
         );
       }
 
-      // Automatically authenticate session upon successful registration
       return await login(email: cleanEmail, password: password);
     } on FirebaseAuthException {
       rethrow;
+    } on SocketException catch (e) {
+      throw FirebaseAuthException(
+        code: 'network-request-failed',
+        message: "Cannot reach backend: ${e.message}",
+      );
+    } on TimeoutException {
+      throw FirebaseAuthException(
+        code: 'server-sleeping',
+        message: "Connection timed out. Server may be spinning up.",
+      );
     } catch (e) {
       throw FirebaseAuthException(
         code: 'network-request-failed',
-        message: "Authentication failed. Please check your connection.",
+        message: "Error connecting to server: $e",
       );
     }
   }
-
-  // ===========================
-  // LOGIN
-  // ===========================
 
   Future<AppUser> login({
     required String email,
@@ -181,16 +186,26 @@ class AuthService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConstants.auth}/login"),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "email": cleanEmail,
-          "password": password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse("${ApiConstants.auth}/login"),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: jsonEncode({
+              "email": cleanEmail,
+              "password": password,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw FirebaseAuthException(
+                code: 'server-sleeping',
+                message: "Backend server is waking up. Please wait 30 seconds and try again.",
+              );
+            },
+          );
 
       final body = _safeJsonDecode(response.body);
 
@@ -200,12 +215,7 @@ class AuthService {
 
         if (userData != null && userData is Map<String, dynamic>) {
           final user = AppUser.fromJson(userData);
-
-          await saveSession(
-            token,
-            user,
-          );
-
+          await saveSession(token, user);
           return user;
         }
       }
@@ -233,17 +243,23 @@ class AuthService {
       );
     } on FirebaseAuthException {
       rethrow;
+    } on SocketException catch (e) {
+      throw FirebaseAuthException(
+        code: 'network-request-failed',
+        message: "Network unreachable: ${e.message}",
+      );
+    } on TimeoutException {
+      throw FirebaseAuthException(
+        code: 'server-sleeping',
+        message: "Connection timed out. Server is waking up, please retry in 30 seconds.",
+      );
     } catch (e) {
       throw FirebaseAuthException(
         code: 'network-request-failed',
-        message: "Authentication failed. Please check your connection.",
+        message: "Connection failed: $e",
       );
     }
   }
-
-  // ===========================
-  // TOKEN
-  // ===========================
 
   Future<String?> getToken() async {
     try {
@@ -254,39 +270,27 @@ class AuthService {
     }
   }
 
-  // ===========================
-  // SAVE SESSION
-  // ===========================
-
-  Future<void> saveSession(
-    String token,
-    AppUser user,
-  ) async {
+  Future<void> saveSession(String token, AppUser user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      await prefs.setString(
-        _tokenKey,
-        token,
-      );
-
-      await prefs.setString(
-        _userKey,
-        jsonEncode(user.toJson()),
-      );
+      await prefs.setString(_tokenKey, token);
+      await prefs.setString('token', token);
+      await prefs.setString(_userKey, jsonEncode(user.toJson()));
+      await prefs.setString('user_email', user.email);
     } catch (_) {}
   }
-
-  // ===========================
-  // LOGOUT / CLEAR
-  // ===========================
 
   Future<void> clearSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       await prefs.remove(_tokenKey);
+      await prefs.remove('token');
       await prefs.remove(_userKey);
+      await prefs.remove('user_email');
+      try {
+        await FirebaseAuth.instance.signOut();
+        await GoogleSignIn().signOut();
+      } catch (_) {}
     } catch (_) {}
   }
 
@@ -294,70 +298,43 @@ class AuthService {
     await clearSession();
   }
 
-  // ===========================
-  // CACHED USER
-  // ===========================
-
   Future<AppUser?> getCachedUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final raw = prefs.getString(_userKey);
-
-      if (raw == null || raw.isEmpty) {
-        return null;
-      }
+      if (raw == null || raw.isEmpty) return null;
 
       final decoded = _safeJsonDecode(raw);
-
       if (decoded != null && decoded is Map<String, dynamic>) {
         return AppUser.fromJson(decoded);
       }
     } catch (_) {}
-
     return null;
   }
 
-  // ===========================
-  // GET CURRENT USER
-  // ===========================
-
   Future<AppUser?> fetchCurrentUser() async {
     final token = await getToken();
-
-    if (token == null || token.isEmpty) {
-      return getCachedUser();
-    }
+    if (token == null || token.isEmpty) return getCachedUser();
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          "${ApiConstants.auth}/me",
-        ),
-        headers: {
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse("${ApiConstants.auth}/me"),
+            headers: {"Authorization": "Bearer $token"},
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final body = _safeJsonDecode(response.body);
-
         if (body is Map<String, dynamic>) {
           final userData = body["data"] ?? body["user"];
-
           if (userData != null && userData is Map<String, dynamic>) {
             final user = AppUser.fromJson(userData);
-
-            await saveSession(
-              token,
-              user,
-            );
-
+            await saveSession(token, user);
             return user;
           }
         }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
-        // Expired or invalid token -> clear stale session
         await clearSession();
         return null;
       }
@@ -367,12 +344,16 @@ class AuthService {
   }
 
   // ===========================
-  // SIGN IN WITH GOOGLE
+  // SIGN IN WITH GOOGLE (SYNCED WITH BACKEND)
   // ===========================
 
-  Future<UserCredential?> signInWithGoogle() async {
+  Future<AppUser?> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
+
+      // Clear previous cached session so account selection dialog opens every time
+      await googleSignIn.signOut();
+
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) return null;
 
@@ -381,17 +362,58 @@ class AuthService {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      final String? idToken = await userCredential.user?.getIdToken();
-      if (idToken != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', idToken);
-        await prefs.setString('user_email', userCredential.user?.email ?? '');
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Sync user with Node backend /api/auth/google
+      final response = await http
+          .post(
+            Uri.parse("${ApiConstants.auth}/google"),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "email": googleUser.email.trim().toLowerCase(),
+              "name": googleUser.displayName ?? "Google User",
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw FirebaseAuthException(
+                code: 'server-sleeping',
+                message: "Backend server is waking up. Please wait 30 seconds and try again.",
+              );
+            },
+          );
+
+      final body = _safeJsonDecode(response.body);
+
+      if (response.statusCode == 200 && body is Map<String, dynamic>) {
+        final token = body["token"]?.toString() ?? "";
+        final userData = body["user"] ?? body["data"];
+
+        if (userData != null && userData is Map<String, dynamic>) {
+          final appUser = AppUser.fromJson(userData);
+          await saveSession(token, appUser);
+          return appUser;
+        }
       }
-      return userCredential;
-    } catch (e) {
+
+      throw FirebaseAuthException(
+        code: 'google-sync-failed',
+        message: "Failed to authenticate with backend: Status ${response.statusCode}",
+      );
+    } on FirebaseAuthException {
       rethrow;
+    } on SocketException catch (e) {
+      throw FirebaseAuthException(
+        code: 'network-request-failed',
+        message: "Cannot reach backend: ${e.message}",
+      );
+    } catch (e) {
+      throw FirebaseAuthException(
+        code: 'unknown',
+        message: "Google Sign-In failed: $e",
+      );
     }
   }
 }

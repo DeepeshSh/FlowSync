@@ -36,10 +36,12 @@ const createInvoice = async (req, res) => {
 
     // Auto-generate invoice number if not explicitly given
     const prefix = upperType === "SALE" ? "INV" : "PUR";
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const invoiceNumber = req.body.invoiceNumber && req.body.invoiceNumber.trim().isNotEmpty
-        ? req.body.invoiceNumber.trim().toUpperCase()
-        : `${prefix}-${Date.now().toString().slice(-6)}${randomSuffix}`;
+    const hasCustomInvoiceNumber =
+      typeof req.body.invoiceNumber === "string" &&
+      req.body.invoiceNumber.trim().length > 0;
+    const invoiceNumber = hasCustomInvoiceNumber
+      ? req.body.invoiceNumber.trim().toUpperCase()
+      : `${prefix}-${Date.now().toString().slice(-6)}${randomSuffix}`;
 
     // Process and calculate line items
     let subtotal = 0;

@@ -437,28 +437,6 @@ class _InvoicesScreenState extends State<InvoicesScreen> with SingleTickerProvid
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
             ),
-            const SizedBox(height: 18),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text(
-                "Create Invoice",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              onPressed: () async {
-                final res = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (ctx) => const CreateInvoiceScreen()),
-                );
-                if (res == true && mounted) _loadInvoices();
-              },
-            ),
           ],
         ),
       ),

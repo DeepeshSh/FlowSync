@@ -1,6 +1,6 @@
 class ApiConstants {
-  // Android Emulator loopback
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Production Cloud / Render backend
+  static const String baseUrl = "https://flowsync-backend-iknk.onrender.com/api";
   static const String auth = '$baseUrl/auth';
   static const String products = '$baseUrl/products';
   static const String profile = '$baseUrl/profile';

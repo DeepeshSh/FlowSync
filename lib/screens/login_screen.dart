@@ -199,28 +199,28 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isGoogleLoading = true);
 
     try {
-      final userCredential = await _authService.signInWithGoogle();
+      final user = await _authService.signInWithGoogle();
       if (!mounted) return;
-      if (userCredential == null) {
-        return;
+      if (user == null) {
+        return; // User cancelled account selection
       }
 
-      final email = userCredential.user?.email ?? '';
-      _showSnackBar("Google authorization successful.", isError: false);
+      _showSnackBar("Welcome, ${user.name}!", isError: false);
 
-      final cachedUser = await _authService.getCachedUser();
-      if (cachedUser == null || cachedUser.businessName.isEmpty) {
+      // If businessName is empty, prompt for business details setup
+      if (user.businessName.isEmpty) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => SignupBusinessDetailsScreen(
-              initialEmail: email,
-              initialName: userCredential.user?.displayName ?? '',
-              initialPhone: userCredential.user?.phoneNumber ?? '',
+              initialEmail: user.email,
+              initialName: user.name,
+              initialPhone: user.phone,
             ),
           ),
         );
       } else {
+        // Business name exists, route directly to main dashboard
         _navigatePostAuth();
       }
     } catch (e) {

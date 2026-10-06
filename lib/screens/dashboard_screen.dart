@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
@@ -103,6 +102,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialSummary != null) {
+      _summary = widget.initialSummary;
+    }
+    if (widget.initialStats != null) {
+      _inventoryStats = Map.from(widget.initialStats!);
+      _isLoading = false;
+    }
     _initDashboard();
   }
 
@@ -126,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _saleService.getSales(),
         _purchaseService.getPurchases(),
         _warehouseService.getWarehouses(),
-      ]).timeout(const Duration(seconds: 6));
+      ]).timeout(const Duration(seconds: 60));
 
       if (!mounted) return;
 
@@ -156,7 +162,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _error = "Could not synchronize ERP metrics: $e";
+        if (widget.initialStats == null && widget.initialSummary == null) {
+          _error = "Could not synchronize ERP metrics: $e";
+        }
       });
     }
   }
@@ -299,7 +307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return _buildSkeletonShimmer();
     }
 
-    if (_error != null && _products.isEmpty) {
+    if (_error != null && _products.isEmpty && widget.initialStats == null && widget.initialSummary == null) {
       return _buildErrorState();
     }
 

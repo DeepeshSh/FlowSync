@@ -3,13 +3,7 @@ import '../config/api_config.dart';
 import '../models/customer_model.dart';
 
 class CustomerService {
-
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl:
-          "${ApiConfig.baseUrl}",
-    ),
-  );
+  final Dio dio = ApiConfig.dio;
 
   Future<List<Customer>>
       getCustomers() async {

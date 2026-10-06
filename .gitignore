@@ -12,8 +12,11 @@ android/.kotlin/
 # Secrets & Keys (Never push to remote)
 .env
 **/.env
+backend/.env
 serviceAccountKey.json
 **/serviceAccountKey.json
+android/key.properties
+android/app/upload-keystore.jks
 
 # Node dependencies
 node_modules/

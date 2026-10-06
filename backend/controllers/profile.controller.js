@@ -265,14 +265,19 @@ exports.updateProfile = async (req, res) => {
 exports.deleteAccount = async (req, res) => {
   try {
     const userId = getUserIdFromReq(req);
-    let deletedUser = null;
-
-    if (userId) {
-      deletedUser = await User.findByIdAndDelete(userId);
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: No valid session token found",
+      });
     }
 
+    const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
-      deletedUser = await User.findOneAndDelete();
+      return res.status(404).json({
+        success: false,
+        message: "User account not found",
+      });
     }
 
     return res.status(200).json({

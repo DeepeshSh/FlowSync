@@ -20,7 +20,7 @@ class _StockMovementScreenState extends State<StockMovementScreen> {
   final _formKey = GlobalKey<FormState>();
   final ProductService _productService = ProductService();
   final WarehouseService _warehouseService = WarehouseService();
-  final Dio dio = Dio();
+  final Dio dio = ApiConfig.dio;
 
   bool _isLoading = true;
   bool _isSaving = false;

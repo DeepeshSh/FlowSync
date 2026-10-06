@@ -7,6 +7,12 @@
 -keep class io.flutter.plugins.** { *; }
 -keepattributes *Annotation*
 
+# Google Services & Firebase
+-keep public class com.google.firebase.** { *; }
+-keep public class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
 # Play Store Split / Deferred Components
 -dontwarn com.google.android.play.core.**
 -dontwarn com.google.android.play.core.splitcompat.**

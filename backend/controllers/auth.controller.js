@@ -63,10 +63,6 @@ exports.login = async (
     req,
     res
   ) => {
-  
-    console.log("LOGIN REQUEST:");
-    console.log(req.body);
-    
     try {
   
       const {

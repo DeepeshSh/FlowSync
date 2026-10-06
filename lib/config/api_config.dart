@@ -23,12 +23,24 @@ class ApiConfig {
         onRequest: (options, handler) async {
           try {
             final prefs = await SharedPreferences.getInstance();
-            final token = prefs.getString("auth_token");
+            final token = prefs.getString("auth_token") ?? prefs.getString("token");
             if (token != null && token.isNotEmpty) {
               options.headers["Authorization"] = "Bearer $token";
             }
           } catch (_) {}
           return handler.next(options);
+        },
+        onError: (DioException error, handler) async {
+          if (error.response?.statusCode == 401) {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove("auth_token");
+              await prefs.remove("token");
+              await prefs.remove("user_data");
+              await prefs.remove("user_email");
+            } catch (_) {}
+          }
+          return handler.next(error);
         },
       ),
     );

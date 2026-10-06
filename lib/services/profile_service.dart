@@ -13,10 +13,10 @@ class ProfileService {
       final response = await dio.get(
         ApiConstants.profile,
         options: Options(
-          sendTimeout: const Duration(seconds: 3),
-          receiveTimeout: const Duration(seconds: 3),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-      ).timeout(const Duration(seconds: 3));
+      ).timeout(const Duration(seconds: 60));
 
       if (response.data is Map<String, dynamic>) {
         final data = response.data['data'] ?? response.data;
@@ -37,10 +37,10 @@ class ProfileService {
         ApiConstants.personalProfile,
         data: data,
         options: Options(
-          sendTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 60));
 
       if (response.data is Map<String, dynamic>) {
         final profileData = response.data['data'] ?? response.data;
@@ -81,10 +81,10 @@ class ProfileService {
         ApiConstants.businessProfile,
         data: data,
         options: Options(
-          sendTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 60));
 
       if (response.data is Map<String, dynamic>) {
         final profileData = response.data['data'] ?? response.data;
@@ -129,10 +129,10 @@ class ProfileService {
         ApiConstants.profile,
         data: data,
         options: Options(
-          sendTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 60));
 
       if (response.data is Map<String, dynamic>) {
         final profileData = response.data['data'] ?? response.data;
@@ -172,10 +172,10 @@ class ProfileService {
       final response = await dio.delete(
         ApiConstants.profile,
         options: Options(
-          sendTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 60));
 
       return response.statusCode == 200;
     } catch (e) {

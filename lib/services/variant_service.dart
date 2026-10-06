@@ -4,7 +4,7 @@ import '../config/api_config.dart';
 import '../models/variant_model.dart';
 
 class VariantService {
-  final Dio dio = Dio();
+  final Dio dio = ApiConfig.dio;
 
   Future<List<Variant>> getVariants() async {
     final response = await dio.get(

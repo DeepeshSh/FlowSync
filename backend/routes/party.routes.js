@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
 
 const {
   getParties,
@@ -8,6 +9,8 @@ const {
   updateParty,
   deleteParty,
 } = require("../controllers/party.controller");
+
+router.use(authMiddleware);
 
 router.get("/", getParties);
 router.get("/:id", getPartyById);

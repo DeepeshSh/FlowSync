@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'main_screen.dart';
+import 'signup_business_details_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -92,15 +93,28 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       final authService = AuthService();
       final isLoggedIn = await authService.isUserLoggedIn();
+      final user = await authService.getCachedUser();
 
       if (!mounted) return;
+
+      Widget targetScreen;
+      if (!isLoggedIn) {
+        targetScreen = const LoginScreen();
+      } else if (user != null && user.businessName.trim().isEmpty) {
+        targetScreen = SignupBusinessDetailsScreen(
+          initialEmail: user.email,
+          initialName: user.name,
+          initialPhone: user.phone,
+        );
+      } else {
+        targetScreen = const MainScreen();
+      }
 
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (_, __, ___) =>
-              isLoggedIn ? const MainScreen() : const LoginScreen(),
+          pageBuilder: (_, __, ___) => targetScreen,
           transitionsBuilder: (_, animation, __, child) => FadeTransition(
             opacity: animation,
             child: child,

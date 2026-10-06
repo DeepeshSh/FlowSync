@@ -67,7 +67,7 @@ class _StockAgingScreenState extends State<StockAgingScreen> {
 
       Map<String, DateTime> lastSoldMap = {};
       try {
-        final Dio dio = Dio();
+        final Dio dio = ApiConfig.dio;
         final response = await dio.get("${ApiConfig.baseUrl}/sales");
         final dynamic rawSales = response.data;
         List salesList = [];

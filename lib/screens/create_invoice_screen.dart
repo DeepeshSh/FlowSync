@@ -84,7 +84,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       final results = await Future.wait([
         _productService.getProducts(),
         _partyService.getParties(),
-      ]).timeout(const Duration(seconds: 4));
+      ]).timeout(const Duration(seconds: 60));
 
       if (mounted) {
         setState(() {

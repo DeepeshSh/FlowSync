@@ -23,15 +23,15 @@ import 'package:FlowSync/utils/api_constants.dart';
 
 void main() {
   test('ApiConstants are properly configured', () {
-    expect(ApiConstants.baseUrl, 'http://10.0.2.2:5000/api');
-    expect(ApiConstants.auth, 'http://10.0.2.2:5000/api/auth');
-    expect(ApiConstants.products, 'http://10.0.2.2:5000/api/products');
-    expect(ApiConstants.profile, 'http://10.0.2.2:5000/api/profile');
-    expect(ApiConstants.movements, 'http://10.0.2.2:5000/api/movements');
-    expect(ApiConstants.allMovements, 'http://10.0.2.2:5000/api/movements/all');
-    expect(ApiConstants.damagedMovements, 'http://10.0.2.2:5000/api/movements/damaged');
-    expect(ApiConstants.parties, 'http://10.0.2.2:5000/api/parties');
-    expect(ApiConstants.invoices, 'http://10.0.2.2:5000/api/invoices');
+    expect(ApiConstants.baseUrl, 'https://flowsync-backend-iknk.onrender.com/api');
+    expect(ApiConstants.auth, 'https://flowsync-backend-iknk.onrender.com/api/auth');
+    expect(ApiConstants.products, 'https://flowsync-backend-iknk.onrender.com/api/products');
+    expect(ApiConstants.profile, 'https://flowsync-backend-iknk.onrender.com/api/profile');
+    expect(ApiConstants.movements, 'https://flowsync-backend-iknk.onrender.com/api/movements');
+    expect(ApiConstants.allMovements, 'https://flowsync-backend-iknk.onrender.com/api/movements/all');
+    expect(ApiConstants.damagedMovements, 'https://flowsync-backend-iknk.onrender.com/api/movements/damaged');
+    expect(ApiConstants.parties, 'https://flowsync-backend-iknk.onrender.com/api/parties');
+    expect(ApiConstants.invoices, 'https://flowsync-backend-iknk.onrender.com/api/invoices');
   });
 
   testWidgets('LoginScreen renders UI correctly with sliding toggle between Sign In and Sign Up', (WidgetTester tester) async {
@@ -42,10 +42,10 @@ void main() {
     );
 
     // Initial Sign In state
-    expect(find.text('Sign In'), findsNWidgets(2)); // Toggle pill + Primary Button
-    expect(find.text('Sign Up'), findsOneWidget); // Toggle pill
-    expect(find.text('Welcome back! Enter your credentials to access inventory.'), findsOneWidget);
-    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Login'), findsNWidgets(2)); // Toggle pill + Primary Button
+    expect(find.text('Sign Up'), findsWidgets); // Toggle pill + Form button
+    expect(find.text('Welcome Back!'), findsOneWidget);
+    expect(find.text('Email_id'), findsOneWidget);
     expect(find.text('Password'), findsWidgets);
     expect(find.text('Forgot Password?'), findsOneWidget);
     expect(find.text('Your data is safe and secure with us'), findsOneWidget);
@@ -63,23 +63,23 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap "Sign Up" segment in the toggle
-    await tester.tap(find.text('Sign Up'));
+    await tester.tap(find.text('Sign Up').last);
     await tester.pumpAndSettle();
 
     // Verify Sign Up form rendered
-    expect(find.text('Create your account to start managing stock and invoicing.'), findsOneWidget);
+    expect(find.text('Get Started!'), findsOneWidget);
     expect(find.text('Full Name'), findsOneWidget);
     expect(find.text('Business / Firm Name'), findsOneWidget);
-    expect(find.text('Phone Number (Optional)'), findsOneWidget);
+    expect(find.text('Contact Phone Number'), findsOneWidget);
     expect(find.text('Email Address'), findsOneWidget);
     expect(find.text('Confirm Password'), findsOneWidget);
-    expect(find.text('Create Account'), findsOneWidget);
+    expect(find.text('Sign Up'), findsWidgets);
 
-    // Tap back to "Sign In" segment
-    await tester.tap(find.text('Sign In').first);
+    // Tap back to "Login" segment
+    await tester.tap(find.text('Login').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back! Enter your credentials to access inventory.'), findsOneWidget);
+    expect(find.text('Welcome Back!'), findsOneWidget);
   });
 
   test('AuthService handles password reset and formatAuthError codes properly', () async {
@@ -212,20 +212,19 @@ void main() {
 
     // Verify Movement History Card and badges
     expect(find.text('Movement History'), findsOneWidget);
-    expect(find.text('Audit Ledger'), findsOneWidget);
-    expect(find.text('+ STOCK IN'), findsOneWidget);
-    expect(find.text('- STOCK OUT'), findsOneWidget);
-    expect(find.text('+20'), findsOneWidget);
-    expect(find.text('-5'), findsOneWidget);
+    expect(find.text('STOCK IN'), findsOneWidget);
+    expect(find.text('STOCK OUT'), findsOneWidget);
+    expect(find.text('+20 pcs'), findsOneWidget);
+    expect(find.text('-5 pcs'), findsOneWidget);
     expect(find.text('Stock: 22 → 42 pcs'), findsOneWidget);
 
     // Scroll to Quick Actions
-    await tester.ensureVisible(find.text('+ Stock In'));
-    expect(find.text('+ Stock In'), findsOneWidget);
-    expect(find.text('- Stock Out'), findsOneWidget);
+    await tester.ensureVisible(find.text('Stock In'));
+    expect(find.text('Stock In'), findsOneWidget);
+    expect(find.text('Stock Out'), findsOneWidget);
 
-    // Tap + Stock In to open bottom sheet
-    await tester.tap(find.text('+ Stock In'));
+    // Tap Stock In to open bottom sheet
+    await tester.tap(find.text('Stock In'));
     await tester.pumpAndSettle();
 
     expect(find.text('Add Stock (Stock In)'), findsOneWidget);
@@ -241,8 +240,8 @@ void main() {
 
     expect(find.text('Add Stock (Stock In)'), findsNothing);
 
-    // Tap - Stock Out to open bottom sheet
-    await tester.tap(find.text('- Stock Out'));
+    // Tap Stock Out to open bottom sheet
+    await tester.tap(find.text('Stock Out'));
     await tester.pumpAndSettle();
 
     expect(find.text('Remove Stock (Stock Out)'), findsOneWidget);
@@ -288,7 +287,7 @@ void main() {
 
     // Verify confirmation dialog
     expect(
-      find.text('Are you sure? This will remove your account and business configuration.'),
+      find.text('Are you sure? This will remove your account and business configuration permanently.'),
       findsOneWidget,
     );
     expect(find.text('Cancel'), findsOneWidget);
@@ -299,7 +298,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Are you sure? This will remove your account and business configuration.'),
+      find.text('Are you sure? This will remove your account and business configuration permanently.'),
       findsNothing,
     );
   });
@@ -396,8 +395,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Securing environment...'), findsOneWidget);
-    expect(find.text('Smart Business. Smooth Flow.'), findsOneWidget);
+    expect(find.text('Your data is safe and secure with us'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     // Fast forward splash timer so timer does not remain pending
@@ -422,19 +420,22 @@ void main() {
     expect(find.byType(DashboardScreen), findsOneWidget);
     await tester.pumpAndSettle();
 
-    // Verify 6 quick actions are present
+    // Verify Top Operational Metrics & Analytics
+    expect(find.text("Today's Stock In"), findsOneWidget);
+    expect(find.text("Today's Stock Out"), findsOneWidget);
+    expect(find.text("Today's Purchase"), findsOneWidget);
+    expect(find.text("Today's Sales"), findsOneWidget);
+    expect(find.text('Analytics'), findsOneWidget);
+
+    // Scroll down to reveal quick actions
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
+    await tester.pumpAndSettle();
     expect(find.text('Damaged Products'), findsOneWidget);
     expect(find.text('Product Logs'), findsOneWidget);
     expect(find.text('Low Stock Alert'), findsOneWidget);
     expect(find.text('Damage Report'), findsOneWidget);
     expect(find.text('Stock Movement'), findsOneWidget);
     expect(find.text('Stock Aging'), findsOneWidget);
-
-    // Verify Metric strip and Analytics
-    expect(find.text('Total Valuation'), findsOneWidget);
-    expect(find.text('Net Stock Count'), findsOneWidget);
-    expect(find.text('Critical Low'), findsOneWidget);
-    expect(find.text('Analytics & Inventory Trends'), findsOneWidget);
   });
 
   testWidgets('DamagedProductsScreen renders summary and empty/incident state', (WidgetTester tester) async {
